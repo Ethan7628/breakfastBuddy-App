@@ -1,87 +1,84 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  User, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 interface UserData {
-  uid: string;
+  name: string;
   email: string;
   isAdmin: boolean;
-  name?: string;
-  selectedBlock?: string;
+  location?: string;
+  block?: string;
 }
 
 interface AuthContextType {
   currentUser: User | null;
   userData: UserData | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
-  loading: boolean;
-  updateUserBlock: (blockId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function signup(email: string, password: string, name: string) {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
+  const signup = async (email: string, password: string, name: string): Promise<void> => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
     
-    // Create user document in Firestore
-    const userDoc = {
-      uid: result.user.uid,
-      email: result.user.email,
-      name: name,
-      isAdmin: email === 'admin@breakfastbuddy.com', // Make admin based on email
-      createdAt: new Date().toISOString(),
+    const userData: UserData = {
+      name,
+      email,
+      isAdmin: email === 'admin@breakfastbuddy.com'
     };
-    
-    await setDoc(doc(db, 'users', result.user.uid), userDoc);
-  }
 
-  async function login(email: string, password: string) {
-    return signInWithEmailAndPassword(auth, email, password);
-  }
+    await setDoc(doc(db, 'users', user.uid), userData);
+  };
 
-  function logout() {
-    return signOut(auth);
-  }
+  const login = async (email: string, password: string): Promise<void> => {
+    await signInWithEmailAndPassword(auth, email, password);
+  };
 
-  async function updateUserBlock(blockId: string) {
-    if (currentUser && userData) {
-      const userRef = doc(db, 'users', currentUser.uid);
-      await setDoc(userRef, { selectedBlock: blockId }, { merge: true });
-      setUserData({ ...userData, selectedBlock: blockId });
-    }
-  }
+  const logout = async (): Promise<void> => {
+    await signOut(auth);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      
       if (user) {
-        // Fetch user data from Firestore
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data() as UserData);
+        setCurrentUser(user);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data() as UserData);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
         }
       } else {
+        setCurrentUser(null);
         setUserData(null);
       }
-      
       setLoading(false);
     });
 
@@ -91,12 +88,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value: AuthContextType = {
     currentUser,
     userData,
+    loading,
     login,
     signup,
-    logout,
-    loading,
-    updateUserBlock,
+    logout
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
