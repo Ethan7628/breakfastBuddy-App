@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,30 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				breakfast: {
+					50: '#fff8e1',
+					100: '#ffecb3',
+					200: '#ffe082',
+					300: '#ffd54f',
+					400: '#ffca28',
+					500: '#ffc107',
+					600: '#ffb300',
+					700: '#ffa000',
+					800: '#ff8f00',
+					900: '#ff6f00',
+				},
+				sunrise: {
+					50: '#fff3e0',
+					100: '#ffe0b3',
+					200: '#ffcc80',
+					300: '#ffb74d',
+					400: '#ffa726',
+					500: '#ff9800',
+					600: '#fb8c00',
+					700: '#f57c00',
+					800: '#ef6c00',
+					900: '#e65100',
 				}
 			},
 			borderRadius: {
@@ -84,11 +109,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out'
 			}
 		}
 	},
