@@ -4,13 +4,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  // These are placeholder values - users will need to replace with their Firebase config
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id"
+  apiKey: "AIzaSyAC0m-0fPxVENPGFGeI23eVlnpUCx8g7so",
+  authDomain: "breakfast-app-fdbcd.firebaseapp.com",
+  projectId: "breakfast-app-fdbcd",
+  storageBucket: "breakfast-app-fdbcd.firebasestorage.app",
+  messagingSenderId: "515501590680",
+  appId: "1:515501590680:web:99f76ced4c78fb9dad68ed",
+  measurementId: "G-38P54MCL87"
 };
 
 const app = initializeApp(firebaseConfig);
