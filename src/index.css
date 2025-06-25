@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -88,31 +87,80 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply bg-background text-foreground font-sans leading-relaxed;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    line-height: 1.625;
     background: linear-gradient(135deg, #f7f3f0 0%, #ede4d3 100%);
     min-height: 100vh;
     line-height: 1.6;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold leading-tight;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    /* font-semibold */
+    line-height: 1.25;
+    /* leading-tight */
     color: hsl(var(--foreground));
   }
 
-  h1 { @apply text-3xl lg:text-4xl; }
-  h2 { @apply text-2xl lg:text-3xl; }
-  h3 { @apply text-xl lg:text-2xl; }
+  h1 {
+    font-size: 1.875rem;
+    /* text-3xl */
+    line-height: 2.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    h1 {
+      font-size: 2.25rem;
+      /* lg:text-4xl */
+      line-height: 2.5rem;
+    }
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    /* text-2xl */
+    line-height: 2rem;
+  }
+
+  @media (min-width: 1024px) {
+    h2 {
+      font-size: 1.875rem;
+      /* lg:text-3xl */
+      line-height: 2.25rem;
+    }
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    /* text-xl */
+    line-height: 1.75rem;
+  }
+
+  @media (min-width: 1024px) {
+    h3 {
+      font-size: 1.5rem;
+      /* lg:text-2xl */
+      line-height: 2rem;
+    }
+  }
 }
 
 @layer components {
   .breakfast-gradient {
     background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
   }
-  
+
   .sunrise-gradient {
     background: linear-gradient(135deg, #d2b48c 0%, #ffd54f 100%);
   }
@@ -122,17 +170,24 @@
   }
 
   /* Better spacing utilities */
-  .space-comfortable > * + * {
+  .space-comfortable>*+* {
     margin-top: 1.5rem;
   }
 
-  .space-relaxed > * + * {
+  .space-relaxed>*+* {
     margin-top: 2rem;
   }
 
   /* Improved button styles */
   .btn-primary {
-    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition-property: all;
+    transition-duration: 200ms;
     background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
     color: white;
     box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
@@ -144,7 +199,14 @@
   }
 
   .btn-accent {
-    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition-property: all;
+    transition-duration: 200ms;
     background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
     color: hsl(var(--foreground));
     box-shadow: 0 2px 8px rgba(255, 213, 79, 0.3);
@@ -157,7 +219,19 @@
 
   /* Custom select styling */
   .custom-select {
-    @apply appearance-none bg-white border-2 border-border rounded-lg px-4 py-3 pr-10 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200;
+    appearance: none;
+    background-color: #fff;
+    border-width: 2px;
+    border-style: solid;
+    border-color: hsl(var(--border));
+    border-radius: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 2.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    transition-property: border-color, box-shadow;
+    transition-duration: 200ms;
+    outline: none;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.75rem center;
     background-repeat: no-repeat;
@@ -166,16 +240,49 @@
 
   /* Card improvements */
   .card-elevated {
-    @apply bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200;
+    background-color: hsl(var(--card));
+    border-width: 1px;
+    border-style: solid;
+    border-color: hsl(var(--border));
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition-property: box-shadow;
+    transition-duration: 200ms;
     padding: 2rem;
+  }
+
+  .card-elevated:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
   }
 
   /* Improved spacing for forms */
   .form-group {
-    @apply space-y-2 mb-6;
+    margin-bottom: 1.5rem;
+    /* mb-6 */
+  }
+
+  .form-group>*+* {
+    margin-top: 0.5rem;
+    /* space-y-2 */
   }
 
   .form-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    /* gap-6 */
+  }
+
+  @media (min-width: 768px) {
+    .form-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      /* md:grid-cols-2 */
+    }
+  }
+}
+
+@layer utilities {
+  .border-border {
+    border-color: hsl(var(--border));
   }
 }
