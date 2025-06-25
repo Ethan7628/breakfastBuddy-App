@@ -36,103 +36,125 @@ const Dashboard = () => {
   const selectedBlockName = blocks.find(b => b.id === (userData?.selectedBlock || selectedBlock))?.name;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-breakfast-800 mb-2">
-          Welcome back, {userData?.name}!
-        </h1>
-        <p className="text-gray-600">Manage your breakfast preferences and orders</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-breakfast-50 to-sunrise-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+        {/* Welcome Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl lg:text-5xl font-bold text-breakfast-800 mb-4">
+            Welcome back, {userData?.name}! 👋
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Manage your breakfast preferences and orders with ease
+          </p>
+        </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Location Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-breakfast-700">Your Location</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Select your campus block:</p>
-              <Select value={selectedBlock} onValueChange={setSelectedBlock}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose your block" />
-                </SelectTrigger>
-                <SelectContent>
-                  {blocks.map((block) => (
-                    <SelectItem key={block.id} value={block.id}>
-                      {block.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedBlock !== userData?.selectedBlock && (
-              <Button 
-                onClick={handleBlockUpdate} 
-                className="w-full breakfast-gradient text-white"
-              >
-                Update Location
-              </Button>
-            )}
-            {userData?.selectedBlock && (
-              <div className="p-3 bg-breakfast-50 rounded-lg">
-                <p className="text-sm text-breakfast-800">
-                  <strong>Current location:</strong> {selectedBlockName}
-                </p>
+        <div className="grid lg:grid-cols-3 gap-8 mb-12">
+          {/* Location Selection */}
+          <Card className="card-elevated lg:col-span-2">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-2xl text-breakfast-700 flex items-center space-x-2">
+                <span>📍</span>
+                <span>Your Location</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-3">
+                  Select your campus block:
+                </label>
+                <Select value={selectedBlock} onValueChange={setSelectedBlock}>
+                  <SelectTrigger className="custom-select h-12 text-base">
+                    <SelectValue placeholder="Choose your block" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border shadow-lg">
+                    {blocks.map((block) => (
+                      <SelectItem 
+                        key={block.id} 
+                        value={block.id}
+                        className="hover:bg-accent/10 cursor-pointer"
+                      >
+                        {block.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              
+              {selectedBlock !== userData?.selectedBlock && (
+                <Button 
+                  onClick={handleBlockUpdate} 
+                  className="btn-primary w-full h-12 text-base"
+                >
+                  Update Location
+                </Button>
+              )}
+              
+              {userData?.selectedBlock && (
+                <div className="p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                  <p className="text-sm font-medium text-foreground">
+                    <strong>Current location:</strong> {selectedBlockName}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Quick Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-breakfast-700">Your Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Total Orders</span>
-                <span className="font-semibold text-breakfast-800">0</span>
+          {/* Quick Stats */}
+          <Card className="card-elevated">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl text-breakfast-700 flex items-center space-x-2">
+                <span>📊</span>
+                <span>Your Activity</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-muted-foreground">Total Orders</span>
+                  <span className="font-semibold text-lg text-breakfast-800">0</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-muted-foreground">Favorite Item</span>
+                  <span className="font-semibold text-breakfast-800">-</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-muted-foreground">This Month</span>
+                  <span className="font-semibold text-breakfast-800">0 orders</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Favorite Item</span>
-                <span className="font-semibold text-breakfast-800">-</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">This Month</span>
-                <span className="font-semibold text-breakfast-800">0 orders</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Quick Actions */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-breakfast-700">Quick Actions</CardTitle>
+        <Card className="card-elevated">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-2xl text-breakfast-700 flex items-center space-x-2">
+              <span>⚡</span>
+              <span>Quick Actions</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <Button 
-                className="h-20 flex flex-col space-y-2 breakfast-gradient text-white"
+                className="h-24 flex flex-col space-y-3 btn-primary text-lg"
                 onClick={() => window.location.href = '/menu'}
               >
-                <span className="text-lg">🍳</span>
+                <span className="text-2xl">🍳</span>
                 <span>Browse Menu</span>
               </Button>
               <Button 
                 variant="outline" 
-                className="h-20 flex flex-col space-y-2 border-breakfast-200 hover:bg-breakfast-50"
+                className="h-24 flex flex-col space-y-3 border-2 border-border hover:bg-accent/10 hover:border-accent text-lg"
               >
-                <span className="text-lg">📋</span>
+                <span className="text-2xl">📋</span>
                 <span>Order History</span>
               </Button>
               <Button 
                 variant="outline" 
-                className="h-20 flex flex-col space-y-2 border-breakfast-200 hover:bg-breakfast-50"
+                className="h-24 flex flex-col space-y-3 border-2 border-border hover:bg-accent/10 hover:border-accent text-lg"
               >
-                <span className="text-lg">⚙️</span>
+                <span className="text-2xl">⚙️</span>
                 <span>Preferences</span>
               </Button>
             </div>
