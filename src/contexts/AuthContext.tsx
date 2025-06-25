@@ -7,7 +7,7 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 interface UserData {
@@ -16,6 +16,7 @@ interface UserData {
   isAdmin: boolean;
   location?: string;
   block?: string;
+  selectedBlock?: string;
 }
 
 interface AuthContextType {
@@ -25,6 +26,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUserBlock: (blockId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,6 +65,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signOut(auth);
   };
 
+  const updateUserBlock = async (blockId: string): Promise<void> => {
+    if (!currentUser) throw new Error('No user logged in');
+    
+    await updateDoc(doc(db, 'users', currentUser.uid), {
+      selectedBlock: blockId
+    });
+    
+    // Update local state
+    if (userData) {
+      setUserData({ ...userData, selectedBlock: blockId });
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -91,7 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     login,
     signup,
-    logout
+    logout,
+    updateUserBlock
   };
 
   return (

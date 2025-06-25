@@ -7,82 +7,82 @@
 
 @layer base {
   :root {
-    --background: 30 40% 98%;
-    --foreground: 20 50% 15%;
+    --background: 35 25% 97%;
+    --foreground: 25 35% 15%;
 
-    --card: 30 40% 99%;
-    --card-foreground: 20 50% 15%;
+    --card: 35 30% 98%;
+    --card-foreground: 25 35% 15%;
 
-    --popover: 30 40% 99%;
-    --popover-foreground: 20 50% 15%;
+    --popover: 35 30% 98%;
+    --popover-foreground: 25 35% 15%;
 
-    --primary: 25 60% 35%;
+    --primary: 30 50% 25%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 20% 90%;
-    --secondary-foreground: 20 50% 15%;
+    --secondary: 35 20% 88%;
+    --secondary-foreground: 25 35% 15%;
 
-    --muted: 30 20% 94%;
-    --muted-foreground: 20 30% 45%;
+    --muted: 35 15% 92%;
+    --muted-foreground: 25 25% 45%;
 
-    --accent: 25 45% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 45 95% 60%;
+    --accent-foreground: 25 35% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 30 20% 87%;
-    --input: 30 20% 87%;
-    --ring: 25 60% 35%;
+    --border: 35 20% 85%;
+    --input: 35 20% 85%;
+    --ring: 30 50% 25%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 30 40% 98%;
-    --sidebar-foreground: 20 50% 15%;
-    --sidebar-primary: 25 60% 35%;
+    --sidebar-background: 35 25% 97%;
+    --sidebar-foreground: 25 35% 15%;
+    --sidebar-primary: 30 50% 25%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 30 20% 92%;
-    --sidebar-accent-foreground: 20 50% 15%;
-    --sidebar-border: 30 20% 87%;
-    --sidebar-ring: 25 60% 35%;
+    --sidebar-accent: 35 20% 90%;
+    --sidebar-accent-foreground: 25 35% 15%;
+    --sidebar-border: 35 20% 85%;
+    --sidebar-ring: 30 50% 25%;
   }
 
   .dark {
-    --background: 20 30% 8%;
-    --foreground: 30 40% 95%;
+    --background: 25 25% 8%;
+    --foreground: 35 30% 95%;
 
-    --card: 20 30% 10%;
-    --card-foreground: 30 40% 95%;
+    --card: 25 25% 10%;
+    --card-foreground: 35 30% 95%;
 
-    --popover: 20 30% 10%;
-    --popover-foreground: 30 40% 95%;
+    --popover: 25 25% 10%;
+    --popover-foreground: 35 30% 95%;
 
-    --primary: 25 45% 45%;
+    --primary: 30 40% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 20 20% 15%;
-    --secondary-foreground: 30 40% 95%;
+    --secondary: 25 20% 15%;
+    --secondary-foreground: 35 30% 95%;
 
-    --muted: 20 20% 15%;
-    --muted-foreground: 30 30% 60%;
+    --muted: 25 20% 15%;
+    --muted-foreground: 35 25% 60%;
 
-    --accent: 25 45% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 45 85% 50%;
+    --accent-foreground: 25 35% 15%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 20 20% 20%;
-    --input: 20 20% 20%;
-    --ring: 25 45% 45%;
-    --sidebar-background: 20 30% 8%;
-    --sidebar-foreground: 30 40% 95%;
-    --sidebar-primary: 25 45% 45%;
+    --border: 25 20% 20%;
+    --input: 25 20% 20%;
+    --ring: 30 40% 35%;
+    --sidebar-background: 25 25% 8%;
+    --sidebar-foreground: 35 30% 95%;
+    --sidebar-primary: 30 40% 35%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 20 20% 15%;
-    --sidebar-accent-foreground: 30 40% 95%;
-    --sidebar-border: 20 20% 20%;
-    --sidebar-ring: 25 45% 45%;
+    --sidebar-accent: 25 20% 15%;
+    --sidebar-accent-foreground: 35 30% 95%;
+    --sidebar-border: 25 20% 20%;
+    --sidebar-ring: 30 40% 35%;
   }
 }
 
@@ -92,10 +92,20 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
-    background: linear-gradient(135deg, #f5f1eb 0%, #e8ddd4 100%);
+    @apply bg-background text-foreground font-sans leading-relaxed;
+    background: linear-gradient(135deg, #f7f3f0 0%, #ede4d3 100%);
     min-height: 100vh;
+    line-height: 1.6;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold leading-tight;
+    color: hsl(var(--foreground));
+  }
+
+  h1 { @apply text-3xl lg:text-4xl; }
+  h2 { @apply text-2xl lg:text-3xl; }
+  h3 { @apply text-xl lg:text-2xl; }
 }
 
 @layer components {
@@ -104,6 +114,68 @@
   }
   
   .sunrise-gradient {
-    background: linear-gradient(135deg, #d2b48c 0%, #daa520 100%);
+    background: linear-gradient(135deg, #d2b48c 0%, #ffd54f 100%);
+  }
+
+  .warm-accent {
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+  }
+
+  /* Better spacing utilities */
+  .space-comfortable > * + * {
+    margin-top: 1.5rem;
+  }
+
+  .space-relaxed > * + * {
+    margin-top: 2rem;
+  }
+
+  /* Improved button styles */
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
+  }
+
+  .btn-accent {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    color: hsl(var(--foreground));
+    box-shadow: 0 2px 8px rgba(255, 213, 79, 0.3);
+  }
+
+  .btn-accent:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 213, 79, 0.4);
+  }
+
+  /* Custom select styling */
+  .custom-select {
+    @apply appearance-none bg-white border-2 border-border rounded-lg px-4 py-3 pr-10 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+  }
+
+  /* Card improvements */
+  .card-elevated {
+    @apply bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200;
+    padding: 2rem;
+  }
+
+  /* Improved spacing for forms */
+  .form-group {
+    @apply space-y-2 mb-6;
+  }
+
+  .form-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-6;
   }
 }
