@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { addToUserCart, getUserCart, CartItem } from '@/lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import '../styles/Menu.css';
 
 interface MealItem {
@@ -53,10 +55,11 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
 const categories = ['All', 'Breakfast Special', 'Popular'];
 
 const Menu = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const { data: menuItems = [], isLoading, error } = useQuery({
     queryKey: ['breakfast-meals'],
@@ -150,6 +153,57 @@ const Menu = () => {
     }
   };
 
+  const handleCheckout = async () => {
+    if (!currentUser || Object.keys(cart).length === 0) return;
+
+    setIsCheckingOut(true);
+
+    try {
+      const orderItems = Object.entries(cart).map(([itemId, quantity]) => {
+        const item = menuItems.find(i => i.id === itemId);
+        return {
+          itemId,
+          name: item?.name || 'Unknown Item',
+          price: item?.price || 0,
+          quantity,
+          total: (item?.price || 0) * quantity
+        };
+      });
+
+      const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
+
+      // Create order in Firestore
+      await addDoc(collection(db, 'orders'), {
+        userId: currentUser.uid,
+        userEmail: userData?.email || currentUser.email,
+        userName: userData?.name || 'Unknown User',
+        items: orderItems,
+        totalAmount,
+        status: 'pending',
+        deliveryLocation: userData?.selectedBlock || 'Not specified',
+        createdAt: new Date().toISOString()
+      });
+
+      // Clear cart
+      setCart({});
+
+      toast({
+        title: 'Order placed successfully!',
+        description: `Your order of $${totalAmount.toFixed(2)} has been submitted for delivery to ${userData?.selectedBlock || 'your location'}.`
+      });
+
+    } catch (error) {
+      console.error('Error processing checkout:', error);
+      toast({
+        title: 'Checkout failed',
+        description: 'Please try again',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
   const getTotalItems = () => {
     return Object.values(cart).reduce((sum, count) => sum + count, 0);
   };
@@ -216,8 +270,12 @@ const Menu = () => {
                   Total: ${getTotalPrice().toFixed(2)}
                 </span>
               </div>
-              <Button className="breakfast-gradient text-white">
-                Checkout
+              <Button 
+                className="breakfast-gradient text-white"
+                onClick={handleCheckout}
+                disabled={isCheckingOut}
+              >
+                {isCheckingOut ? 'Processing...' : 'Checkout'}
               </Button>
             </div>
           </CardContent>
