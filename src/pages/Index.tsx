@@ -22,30 +22,33 @@ const Index = () => {
             <p className="index-hero-desc">
               Your perfect breakfast companion. Order delicious morning meals delivered fresh to your campus location.
               Start your day right with our carefully curated breakfast menu.
+              <div className="index-hero-btns">
+                {currentUser ? (
+                  <>
+                    <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                      <Link to="/dashboard">Go to Dashboard</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg" style={{ fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                      <Link to="/menu">Browse Menu</Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                      <Link to="/signup">Get Started</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg" style={{ fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                      <Link to="/login">Sign In</Link>
+                    </Button>
+                  </>
+                )}
+              </div>
             </p>
+
+
           </div>
 
-          <div className="index-hero-btns">
-            {currentUser ? (
-              <>
-                <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
-                  <Link to="/dashboard">Go to Dashboard</Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" style={{ fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
-                  <Link to="/menu">Browse Menu</Link>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
-                  <Link to="/signup">Get Started</Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" style={{ fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
-                  <Link to="/login">Sign In</Link>
-                </Button>
-              </>
-            )}
-          </div>
+
         </div>
       </section>
 
