@@ -1,3 +1,4 @@
+
 .index-root {
     min-height: 100vh;
 }
@@ -40,11 +41,17 @@
 
 .index-hero-desc {
     font-size: 20px;
-    color: #4b5563;
+    color: #1f2937;
+    font-weight: 600;
     margin-bottom: 32px;
     max-width: 768px;
     margin-left: auto;
     margin-right: auto;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .index-hero-btns {
