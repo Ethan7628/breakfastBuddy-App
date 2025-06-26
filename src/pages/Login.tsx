@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import logo from "../images/logo.png";
+import '../styles/Login.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
       await login(email, password);
@@ -25,10 +26,10 @@ const Login = () => {
       toast({ title: 'Welcome back!' });
     } catch (error) {
       console.error('Login error:', error);
-      toast({ 
-        title: 'Login failed', 
+      toast({
+        title: 'Login failed',
         description: 'Please check your credentials and try again.',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
     } finally {
       setLoading(false);
@@ -36,18 +37,20 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 breakfast-gradient rounded-full flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-2xl">BB</span>
+    <div
+      className="login-root"
+    >
+      <Card className="login-card">
+        <CardHeader className="login-header">
+          <div className="login-logo-wrap">
+            <img src={logo} alt="logo" className="login-logo" />
           </div>
-          <CardTitle className="text-2xl font-bold text-breakfast-800">Welcome Back</CardTitle>
-          <p className="text-gray-600">Sign in to your Breakfast Buddy account</p>
+          <CardTitle className="login-title">Welcome Back</CardTitle>
+          <p className="login-desc">Sign in to your Breakfast Buddy account</p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-form-group">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -56,9 +59,10 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
+                className="login-input"
               />
             </div>
-            <div className="space-y-2">
+            <div className="login-form-group">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -67,20 +71,21 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
+                className="login-input"
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full breakfast-gradient text-white"
+            <Button
+              type="submit"
+              className="login-btn"
               disabled={loading}
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-          <div className="text-center mt-4">
-            <p className="text-sm text-gray-600">
+          <div className="login-footer">
+            <p className="login-footer-text">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-breakfast-600 hover:text-breakfast-800 font-medium">
+              <Link to="/signup" className="login-footer-link">
                 Sign up
               </Link>
             </p>

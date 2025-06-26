@@ -1,9 +1,12 @@
-
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import '../styles/Admin.css';
 
 interface User {
   uid: string;
@@ -17,6 +20,7 @@ interface User {
 const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const { userData } = useAuth();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -27,6 +31,11 @@ const Admin = () => {
         setUsers(usersData);
       } catch (error) {
         console.error('Error fetching users:', error);
+        toast({
+          title: 'Error loading users',
+          description: 'Failed to fetch user data',
+          variant: 'destructive'
+        });
       } finally {
         setLoading(false);
       }
@@ -35,12 +44,63 @@ const Admin = () => {
     fetchUsers();
   }, []);
 
+  const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      await updateDoc(doc(db, 'users', userId), {
+        isAdmin: !currentStatus
+      });
+
+      // Also update in admins collection
+      if (!currentStatus) {
+        await updateDoc(doc(db, 'admins', userId), {
+          email: users.find(u => u.uid === userId)?.email,
+          role: 'admin'
+        });
+      } else {
+        await updateDoc(doc(db, 'admins', userId), {
+          role: 'revoked'
+        });
+      }
+
+      setUsers(users.map(user =>
+        user.uid === userId ? { ...user, isAdmin: !currentStatus } : user
+      ));
+
+      toast({
+        title: 'Success',
+        description: `User admin status ${!currentStatus ? 'granted' : 'revoked'}`,
+      });
+    } catch (error) {
+      console.error('Error updating admin status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update admin status',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  if (!userData?.isAdmin) {
+    return (
+      <div className="admin-access-denied">
+        <Card>
+          <CardHeader>
+            <CardTitle className="admin-stats-card-title">Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="admin-desc">You don't have permission to access this page.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-breakfast-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
+      <div className="admin-access-denied">
+        <div className="admin-center">
+          <div className="admin-spinner"></div>
+          <p className="admin-loading-text">Loading admin dashboard...</p>
         </div>
       </div>
     );
@@ -51,41 +111,41 @@ const Admin = () => {
   const usersWithBlocks = users.filter(u => u.selectedBlock).length;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-breakfast-800 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">Manage users and monitor app activity</p>
+    <div className="admin-root">
+      <div className="admin-center">
+        <h1 className="admin-title">Admin Dashboard</h1>
+        <p className="admin-desc">Manage users and monitor app activity</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="admin-stats-grid">
         <Card>
           <CardHeader>
-            <CardTitle className="text-breakfast-700">Total Users</CardTitle>
+            <CardTitle className="admin-stats-card-title">Total Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-breakfast-800">{totalUsers}</div>
-            <p className="text-sm text-gray-600">Registered users</p>
+            <div className="admin-stats-card-value">{totalUsers}</div>
+            <p className="admin-stats-card-desc">Registered users</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-breakfast-700">Admin Users</CardTitle>
+            <CardTitle className="admin-stats-card-title">Admin Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-breakfast-800">{adminUsers}</div>
-            <p className="text-sm text-gray-600">Admin accounts</p>
+            <div className="admin-stats-card-value">{adminUsers}</div>
+            <p className="admin-stats-card-desc">Admin accounts</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-breakfast-700">Active Locations</CardTitle>
+            <CardTitle className="admin-stats-card-title">Active Locations</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-breakfast-800">{usersWithBlocks}</div>
-            <p className="text-sm text-gray-600">Users with selected blocks</p>
+            <div className="admin-stats-card-value">{usersWithBlocks}</div>
+            <p className="admin-stats-card-desc">Users with selected blocks</p>
           </CardContent>
         </Card>
       </div>
@@ -93,37 +153,49 @@ const Admin = () => {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-breakfast-700">User Management</CardTitle>
+          <CardTitle className="admin-stats-card-title">User Management</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="admin-table-wrap">
+            <table className="admin-table">
               <thead>
-                <tr className="border-b border-breakfast-200">
-                  <th className="text-left p-3 font-semibold text-breakfast-800">Name</th>
-                  <th className="text-left p-3 font-semibold text-breakfast-800">Email</th>
-                  <th className="text-left p-3 font-semibold text-breakfast-800">Role</th>
-                  <th className="text-left p-3 font-semibold text-breakfast-800">Location</th>
-                  <th className="text-left p-3 font-semibold text-breakfast-800">Joined</th>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Location</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.uid} className="border-b border-gray-100 hover:bg-breakfast-50">
-                    <td className="p-3">{user.name}</td>
-                    <td className="p-3 text-gray-600">{user.email}</td>
-                    <td className="p-3">
+                  <tr key={user.uid}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>
                       {user.isAdmin ? (
-                        <Badge className="breakfast-gradient text-white">Admin</Badge>
+                        <span className="admin-badge-admin">Admin</span>
                       ) : (
-                        <Badge variant="outline">User</Badge>
+                        <span className="admin-badge-user">User</span>
                       )}
                     </td>
-                    <td className="p-3 text-gray-600">
+                    <td>
                       {user.selectedBlock ? user.selectedBlock.replace('block-', 'Block ').toUpperCase() : '-'}
                     </td>
-                    <td className="p-3 text-gray-600">
+                    <td>
                       {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleAdminStatus(user.uid, user.isAdmin)}
+                        disabled={user.uid === userData?.uid}
+                        className="admin-action-btn"
+                      >
+                        {user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                      </Button>
                     </td>
                   </tr>
                 ))}

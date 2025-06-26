@@ -1,0 +1,103 @@
+.signup-background {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-image: url('https://img.freepik.com/free-photo/croissants-with-jam-coffee_23-2147693753.jpg');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.signup-card {
+    width: 100%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.8);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.08);
+}
+
+.signup-card-header {
+    text-align: center;
+}
+
+.signup-logo-container {
+    margin: 0 auto 1rem;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.signup-logo-img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.signup-title {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: #7c4700 !important;
+}
+
+.signup-subtitle {
+    color: #4b5563;
+}
+
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.signup-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.signup-input {
+    background: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.signup-submit-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    color: #fff;
+    opacity: 1;
+    transition: opacity 0.2s;
+    font-weight: 500;
+    font-size: 1rem;
+    border-radius: 8px;
+    padding: 0.75rem 0;
+}
+
+.signup-submit-btn:disabled {
+    opacity: 0.9;
+    cursor: not-allowed;
+}
+
+.signup-footer {
+    text-align: center;
+    margin-top: 16px;
+}
+
+.signup-footer-text {
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+.signup-footer-link {
+    color: #eab308;
+    font-weight: 500;
+    text-decoration: none;
+}
