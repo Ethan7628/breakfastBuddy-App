@@ -1,4 +1,3 @@
-
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
@@ -79,27 +78,42 @@ export const addMenuItem = async (item: MenuItem) => {
   return await addDoc(collection(db, 'breakfastItems'), item);
 };
 
-export const getUserCart = async (userId: string) => {
+export const getUserCart = async (userId: string): Promise<CartItem[]> => {
   const q = query(
     collection(db, 'userCarts'),
     where('userId', '==', userId)
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ 
+    id: doc.id, 
+    ...doc.data() 
+  } as CartItem));
 };
 
 export const addToUserCart = async (userId: string, itemId: string, itemData: { name: string; price: number }) => {
-  return await addDoc(collection(db, 'userCarts'), {
-    userId,
-    itemId,
-    name: itemData.name,
-    price: itemData.price,
-    quantity: 1,
-    addedAt: new Date().toISOString()
-  });
+  console.log('Adding to cart:', { userId, itemId, itemData });
+  
+  try {
+    const docRef = await addDoc(collection(db, 'userCarts'), {
+      userId,
+      itemId,
+      name: itemData.name,
+      price: itemData.price,
+      quantity: 1,
+      addedAt: new Date().toISOString()
+    });
+    console.log('Successfully added to cart with ID:', docRef.id);
+    return docRef;
+  } catch (error) {
+    console.error('Error adding to cart:', error);
+    throw error;
+  }
 };
 
-export const getAllCarts = async () => {
+export const getAllCarts = async (): Promise<CartItem[]> => {
   const snapshot = await getDocs(collection(db, 'userCarts'));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ 
+    id: doc.id, 
+    ...doc.data() 
+  } as CartItem));
 };

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { addToUserCart, getUserCart } from '@/lib/firebase';
+import { addToUserCart, getUserCart, CartItem } from '@/lib/firebase';
 import '../styles/Menu.css';
 
 interface MealItem {
@@ -23,13 +24,6 @@ interface MenuItem {
   category: string;
   image: string;
   popular?: boolean;
-}
-
-interface CartItem {
-  id: string;
-  quantity: number;
-  name: string;
-  price: number;
 }
 
 const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
@@ -62,6 +56,7 @@ const Menu = () => {
   const { currentUser } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
 
   const { data: menuItems = [], isLoading, error } = useQuery({
     queryKey: ['breakfast-meals'],
@@ -73,14 +68,22 @@ const Menu = () => {
     const loadCart = async () => {
       if (currentUser?.uid) {
         try {
-          const cartItems = await getUserCart(currentUser.uid);
+          console.log('Loading cart for user:', currentUser.uid);
+          const cartItems: CartItem[] = await getUserCart(currentUser.uid);
+          console.log('Loaded cart items:', cartItems);
+          
           const cartMap: Record<string, number> = {};
-          cartItems.forEach((item: any) => {
+          cartItems.forEach((item) => {
             cartMap[item.itemId] = (cartMap[item.itemId] || 0) + (item.quantity || 1);
           });
           setCart(cartMap);
         } catch (err) {
           console.error('Error loading cart:', err);
+          toast({
+            title: 'Error loading cart',
+            description: 'Please refresh the page',
+            variant: 'destructive'
+          });
         }
       }
     };
@@ -95,15 +98,27 @@ const Menu = () => {
 
   const addToCart = async (itemId: string) => {
     if (!currentUser) {
-      toast({ title: 'Please login to add items' });
+      toast({ 
+        title: 'Please login to add items',
+        description: 'You need to be logged in to add items to cart'
+      });
       return;
     }
 
     const item = menuItems.find(i => i.id === itemId);
-    if (!item) return;
+    if (!item) {
+      toast({
+        title: 'Item not found',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsAddingToCart(itemId);
 
     try {
-      // Update cart in Firestore
+      console.log('Adding item to cart:', item);
+      
       await addToUserCart(
         currentUser.uid,
         itemId,
@@ -119,13 +134,19 @@ const Menu = () => {
         [itemId]: (prev[itemId] || 0) + 1
       }));
 
-      toast({ title: 'Added to cart!' });
+      toast({ 
+        title: 'Added to cart!',
+        description: `${item.name} has been added to your cart`
+      });
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast({
         title: 'Failed to add to cart',
+        description: 'Please try again',
         variant: 'destructive'
       });
+    } finally {
+      setIsAddingToCart(null);
     }
   };
 
@@ -238,8 +259,9 @@ const Menu = () => {
                     onClick={() => addToCart(item.id)}
                     size="sm"
                     className="breakfast-gradient text-white"
+                    disabled={isAddingToCart === item.id}
                   >
-                    Add to Cart
+                    {isAddingToCart === item.id ? 'Adding...' : 'Add to Cart'}
                   </Button>
                 </div>
               </div>
