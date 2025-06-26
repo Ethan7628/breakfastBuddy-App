@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, getAllCarts } from '@/lib/firebase';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,23 +17,39 @@ interface User {
   createdAt: string;
 }
 
+interface CartItem {
+  id: string;
+  userId: string;
+  itemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  addedAt: string;
+}
+
 const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { userData } = useAuth();
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch users
         const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-        const snapshot = await getDocs(usersQuery);
-        const usersData = snapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id } as User));
+        const usersSnapshot = await getDocs(usersQuery);
+        const usersData = usersSnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id } as User));
         setUsers(usersData);
+
+        // Fetch all cart items
+        const cartData = await getAllCarts();
+        setCartItems(cartData as CartItem[]);
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error('Error fetching data:', error);
         toast({
-          title: 'Error loading users',
-          description: 'Failed to fetch user data',
+          title: 'Error loading data',
+          description: 'Failed to fetch admin data',
           variant: 'destructive'
         });
       } finally {
@@ -41,7 +57,7 @@ const Admin = () => {
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, []);
 
   const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
@@ -49,18 +65,6 @@ const Admin = () => {
       await updateDoc(doc(db, 'users', userId), {
         isAdmin: !currentStatus
       });
-
-      // Also update in admins collection
-      if (!currentStatus) {
-        await updateDoc(doc(db, 'admins', userId), {
-          email: users.find(u => u.uid === userId)?.email,
-          role: 'admin'
-        });
-      } else {
-        await updateDoc(doc(db, 'admins', userId), {
-          role: 'revoked'
-        });
-      }
 
       setUsers(users.map(user =>
         user.uid === userId ? { ...user, isAdmin: !currentStatus } : user
@@ -108,7 +112,17 @@ const Admin = () => {
 
   const totalUsers = users.length;
   const adminUsers = users.filter(u => u.isAdmin).length;
-  const usersWithBlocks = users.filter(u => u.selectedBlock).length;
+  const totalOrders = cartItems.length;
+  const totalRevenue = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Group cart items by user
+  const ordersByUser = cartItems.reduce((acc, item) => {
+    if (!acc[item.userId]) {
+      acc[item.userId] = [];
+    }
+    acc[item.userId].push(item);
+    return acc;
+  }, {} as Record<string, CartItem[]>);
 
   return (
     <div className="admin-root">
@@ -131,24 +145,62 @@ const Admin = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="admin-stats-card-title">Admin Users</CardTitle>
+            <CardTitle className="admin-stats-card-title">Total Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="admin-stats-card-value">{adminUsers}</div>
-            <p className="admin-stats-card-desc">Admin accounts</p>
+            <div className="admin-stats-card-value">{totalOrders}</div>
+            <p className="admin-stats-card-desc">Items in carts</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="admin-stats-card-title">Active Locations</CardTitle>
+            <CardTitle className="admin-stats-card-title">Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="admin-stats-card-value">{usersWithBlocks}</div>
-            <p className="admin-stats-card-desc">Users with selected blocks</p>
+            <div className="admin-stats-card-value">${totalRevenue.toFixed(2)}</div>
+            <p className="admin-stats-card-desc">Total cart value</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Cart Items Table */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="admin-stats-card-title">Recent Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Item</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cartItems.slice(0, 10).map((item) => {
+                  const user = users.find(u => u.uid === item.userId);
+                  return (
+                    <tr key={item.id}>
+                      <td className="text-breakfast-800">{user?.name || 'Unknown'}</td>
+                      <td className="text-breakfast-700">{item.name}</td>
+                      <td className="text-breakfast-700">${item.price.toFixed(2)}</td>
+                      <td className="text-breakfast-700">{item.quantity}</td>
+                      <td className="text-breakfast-800 font-semibold">${(item.price * item.quantity).toFixed(2)}</td>
+                      <td className="text-breakfast-600">{new Date(item.addedAt).toLocaleDateString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Users Table */}
       <Card>
@@ -164,41 +216,42 @@ const Admin = () => {
                   <th>Email</th>
                   <th>Role</th>
                   <th>Location</th>
-                  <th>Joined</th>
+                  <th>Orders</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <tr key={user.uid}>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>
-                      {user.isAdmin ? (
-                        <span className="admin-badge-admin">Admin</span>
-                      ) : (
-                        <span className="admin-badge-user">User</span>
-                      )}
-                    </td>
-                    <td>
-                      {user.selectedBlock ? user.selectedBlock.replace('block-', 'Block ').toUpperCase() : '-'}
-                    </td>
-                    <td>
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
-                    <td>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleAdminStatus(user.uid, user.isAdmin)}
-                        disabled={user.uid === userData?.uid}
-                        className="admin-action-btn"
-                      >
-                        {user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {users.map((user) => {
+                  const userOrders = ordersByUser[user.uid] || [];
+                  return (
+                    <tr key={user.uid}>
+                      <td className="text-breakfast-800">{user.name}</td>
+                      <td className="text-breakfast-700">{user.email}</td>
+                      <td>
+                        {user.isAdmin ? (
+                          <span className="admin-badge-admin">Admin</span>
+                        ) : (
+                          <span className="admin-badge-user">User</span>
+                        )}
+                      </td>
+                      <td className="text-breakfast-700">
+                        {user.selectedBlock ? user.selectedBlock.replace('block-', 'Block ').toUpperCase() : '-'}
+                      </td>
+                      <td className="text-breakfast-700">{userOrders.length} items</td>
+                      <td>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleAdminStatus(user.uid, user.isAdmin)}
+                          disabled={user.uid === userData?.uid}
+                          className="admin-action-btn text-breakfast-700 border-breakfast-300"
+                        >
+                          {user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -75,8 +75,8 @@ const Menu = () => {
         try {
           const cartItems = await getUserCart(currentUser.uid);
           const cartMap: Record<string, number> = {};
-          (cartItems as { id: string; quantity: number }[]).forEach(item => {
-            cartMap[item.id] = (cartMap[item.id] || 0) + item.quantity;
+          cartItems.forEach((item: any) => {
+            cartMap[item.itemId] = (cartMap[item.itemId] || 0) + (item.quantity || 1);
           });
           setCart(cartMap);
         } catch (err) {
@@ -108,11 +108,9 @@ const Menu = () => {
         currentUser.uid,
         itemId,
         {
-          id: itemId,
           name: item.name,
-          price: item.price,
-          quantity: 1
-        } as CartItem
+          price: item.price
+        }
       );
 
       // Update local state
@@ -166,8 +164,8 @@ const Menu = () => {
   return (
     <div className="menu-root">
       <div className="menu-title">
-        <h1>Breakfast Menu</h1>
-        <p>Delicious breakfast options to start your day right</p>
+        <h1 className="text-breakfast-800">Breakfast Menu</h1>
+        <p className="text-breakfast-600">Delicious breakfast options to start your day right</p>
       </div>
 
       {/* Category Filter */}
@@ -177,7 +175,7 @@ const Menu = () => {
             key={category}
             variant={selectedCategory === category ? "default" : "outline"}
             onClick={() => setSelectedCategory(category)}
-            className={selectedCategory === category ? "breakfast-gradient text-white" : ""}
+            className={selectedCategory === category ? "breakfast-gradient text-white" : "text-breakfast-700 border-breakfast-300"}
           >
             {category}
           </Button>
@@ -186,14 +184,14 @@ const Menu = () => {
 
       {/* Cart Summary */}
       {getTotalItems() > 0 && (
-        <Card className="menu-cart-summary">
+        <Card className="menu-cart-summary border-breakfast-200">
           <CardContent className="menu-cart-content">
             <div className="menu-cart-row">
               <div>
-                <span className="menu-cart-label">
+                <span className="menu-cart-label text-breakfast-700">
                   Cart: {getTotalItems()} items
                 </span>
-                <span className="menu-cart-total">
+                <span className="menu-cart-total text-breakfast-800 font-bold">
                   Total: ${getTotalPrice().toFixed(2)}
                 </span>
               </div>
@@ -208,7 +206,7 @@ const Menu = () => {
       {/* Menu Items */}
       <div className="menu-items-grid">
         {filteredItems.map((item) => (
-          <Card key={item.id} className="menu-item-card">
+          <Card key={item.id} className="menu-item-card border-breakfast-200">
             <CardHeader>
               <div className="menu-item-header">
                 <div className="menu-item-img-wrap">
@@ -219,20 +217,20 @@ const Menu = () => {
                   />
                 </div>
                 {item.popular && (
-                  <span className="menu-item-popular">Popular</span>
+                  <span className="menu-item-popular bg-breakfast-500 text-white">Popular</span>
                 )}
               </div>
-              <CardTitle className="menu-item-title">{item.name}</CardTitle>
-              <p className="menu-item-desc">{item.description}</p>
+              <CardTitle className="menu-item-title text-breakfast-800">{item.name}</CardTitle>
+              <p className="menu-item-desc text-breakfast-600">{item.description}</p>
             </CardHeader>
             <CardContent>
               <div className="menu-item-content">
-                <span className="menu-item-price">
+                <span className="menu-item-price text-breakfast-800 font-bold">
                   ${item.price.toFixed(2)}
                 </span>
                 <div className="menu-item-actions">
                   {cart[item.id] > 0 && (
-                    <span className="menu-item-incart">
+                    <span className="menu-item-incart text-breakfast-600">
                       {cart[item.id]} in cart
                     </span>
                   )}
