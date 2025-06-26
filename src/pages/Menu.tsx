@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { addToUserCart, getUserCart, CartItem } from '@/lib/firebase';
@@ -74,7 +73,7 @@ const Menu = () => {
           console.log('Loading cart for user:', currentUser.uid);
           const cartItems: CartItem[] = await getUserCart(currentUser.uid);
           console.log('Loaded cart items:', cartItems);
-          
+
           const cartMap: Record<string, number> = {};
           cartItems.forEach((item) => {
             cartMap[item.itemId] = (cartMap[item.itemId] || 0) + (item.quantity || 1);
@@ -101,7 +100,7 @@ const Menu = () => {
 
   const addToCart = async (itemId: string) => {
     if (!currentUser) {
-      toast({ 
+      toast({
         title: 'Please login to add items',
         description: 'You need to be logged in to add items to cart'
       });
@@ -121,7 +120,7 @@ const Menu = () => {
 
     try {
       console.log('Adding item to cart:', item);
-      
+
       await addToUserCart(
         currentUser.uid,
         itemId,
@@ -137,7 +136,7 @@ const Menu = () => {
         [itemId]: (prev[itemId] || 0) + 1
       }));
 
-      toast({ 
+      toast({
         title: 'Added to cart!',
         description: `${item.name} has been added to your cart`
       });
@@ -270,7 +269,7 @@ const Menu = () => {
                   Total: ${getTotalPrice().toFixed(2)}
                 </span>
               </div>
-              <Button 
+              <Button
                 className="breakfast-gradient text-white"
                 onClick={handleCheckout}
                 disabled={isCheckingOut}
