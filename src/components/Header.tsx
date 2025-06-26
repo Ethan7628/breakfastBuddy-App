@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,11 +28,16 @@ const Header = () => {
     }
   };
 
+  const handleSettingsClick = () => {
+    navigate('/settings');
+  };
+
   const isActive = (path: string) => location.pathname === path;
 
   const navLinks = [
     { to: '/', label: 'Home', icon: Home },
     { to: '/menu', label: 'Menu', icon: null },
+    ...(currentUser ? [{ to: '/orders', label: 'Orders', icon: null }] : []),
     ...(userData?.isAdmin ? [{ to: '/admin', label: 'Admin', icon: null }] : []),
     ...(currentUser && !userData?.isAdmin ? [{ to: '/dashboard', label: 'Dashboard', icon: null }] : []),
   ];
@@ -82,7 +88,10 @@ const Header = () => {
                   align="end"
                   className="w-48 bg-popover border border-border shadow-lg"
                 >
-                  <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer hover:bg-accent/10">
+                  <DropdownMenuItem 
+                    onClick={handleSettingsClick}
+                    className="flex items-center space-x-2 cursor-pointer hover:bg-accent/10"
+                  >
                     <Settings className="h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
@@ -149,6 +158,16 @@ const Header = () => {
                 <div className="px-4 py-2 text-sm font-medium text-muted-foreground">
                   Welcome, {userData?.name || 'User'}!
                 </div>
+                <button
+                  onClick={() => {
+                    handleSettingsClick();
+                    setIsMenuOpen(false);
+                  }}
+                  className="header-mobile-menu-link flex items-center space-x-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </button>
                 <button
                   onClick={() => {
                     handleLogout();

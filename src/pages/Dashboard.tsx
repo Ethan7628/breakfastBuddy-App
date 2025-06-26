@@ -1,9 +1,11 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import '../styles/Dashboard.css';
 
 const blocks = [
@@ -17,6 +19,7 @@ const blocks = [
 const Dashboard = () => {
   const { userData, updateUserBlock } = useAuth();
   const [selectedBlock, setSelectedBlock] = useState(userData?.selectedBlock || '');
+  const navigate = useNavigate();
 
   const handleBlockUpdate = async () => {
     if (!selectedBlock) return;
@@ -136,7 +139,7 @@ const Dashboard = () => {
             <div className="dashboard-quick-actions">
               <Button
                 className="dashboard-quick-btn dashboard-quick-btn-primary"
-                onClick={() => (window.location.href = '/menu')}
+                onClick={() => navigate('/menu')}
               >
                 <span className="text-2xl">🍳</span>
                 <span>Browse Menu</span>
@@ -144,6 +147,7 @@ const Dashboard = () => {
               <Button
                 variant="outline"
                 className="dashboard-quick-btn dashboard-quick-btn-outline"
+                onClick={() => navigate('/orders')}
               >
                 <span className="text-2xl">📋</span>
                 <span>Order History</span>
@@ -151,9 +155,10 @@ const Dashboard = () => {
               <Button
                 variant="outline"
                 className="dashboard-quick-btn dashboard-quick-btn-outline"
+                onClick={() => navigate('/settings')}
               >
                 <span className="text-2xl">⚙️</span>
-                <span>Preferences</span>
+                <span>Settings</span>
               </Button>
             </div>
           </CardContent>

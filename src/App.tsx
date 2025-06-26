@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +15,7 @@ import Menu from "./pages/Menu";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import Orders from "./pages/Orders";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +45,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Menu />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <Orders />
                   </ProtectedRoute>
                 }
               />
