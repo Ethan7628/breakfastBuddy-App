@@ -1,11 +1,11 @@
+
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import {
-  collection, getDocs, addDoc, doc,
+  collection, getDocs, addDoc, doc, setDoc,
   query, where, onSnapshot
 } from 'firebase/firestore';
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyAC0m-0fPxVENPGFGeI23eVlnpUCx8g7so",
@@ -21,26 +21,29 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Admin initialization function
+// Admin initialization function (only call when needed)
 export const initializeAdmin = async (email: string, password: string) => {
   try {
     const { createUserWithEmailAndPassword } = await import('firebase/auth');
-    const { doc, setDoc } = await import('firebase/firestore');
+    const { doc, setDoc, getDoc } = await import('firebase/firestore');
+
+    // Check if admin already exists
+    const adminQuery = query(collection(db, 'users'), where('email', '==', email));
+    const existingAdmins = await getDocs(adminQuery);
+    
+    if (!existingAdmins.empty) {
+      console.log("Admin already exists");
+      return null;
+    }
 
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    await setDoc(doc(db, "admins", user.uid), {
-      email: email,
-      uid: user.uid,
-      role: "admin",
-      createdAt: new Date()
-    });
-
     await setDoc(doc(db, "users", user.uid), {
       name: "Admin",
       email: email,
-      isAdmin: true
+      isAdmin: true,
+      createdAt: new Date().toISOString()
     });
 
     console.log("Admin initialized successfully!");
@@ -51,15 +54,25 @@ export const initializeAdmin = async (email: string, password: string) => {
   }
 };
 
-// Call this function once to create your first admin
-initializeAdmin("kusasirakwe.ethan.upti@gmail.com", "eth256");
-
-// Add to your existing firestore.ts
+// Menu item interfaces
 export interface MenuItem {
+  id: string;
   name: string;
   price: number;
   description?: string;
   imageUrl?: string;
+  category?: string;
+  image?: string;
+}
+
+export interface CartItem {
+  id: string;
+  userId: string;
+  itemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  addedAt: string;
 }
 
 export const addMenuItem = async (item: MenuItem) => {
@@ -75,11 +88,13 @@ export const getUserCart = async (userId: string) => {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-export const addToUserCart = async (userId: string, itemId: string, itemData: MenuItem) => {
+export const addToUserCart = async (userId: string, itemId: string, itemData: { name: string; price: number }) => {
   return await addDoc(collection(db, 'userCarts'), {
     userId,
     itemId,
-    ...itemData,
+    name: itemData.name,
+    price: itemData.price,
+    quantity: 1,
     addedAt: new Date().toISOString()
   });
 };
