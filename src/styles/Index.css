@@ -1,4 +1,3 @@
-
 .index-root {
     min-height: 100vh;
 }
@@ -34,8 +33,8 @@
 }
 
 .index-hero-logo {
-    width: 64px;
-    height: 64px;
+    width: 100px;
+    height: 100px;
     object-fit: contain;
 }
 
@@ -48,7 +47,7 @@
     margin-left: auto;
     margin-right: auto;
     text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(121, 116, 116, 0.256);
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -56,11 +55,12 @@
 
 .index-hero-btns {
     display: flex;
-    flex-direction: column;
+    /* flex-direction: column; */
     gap: 16px;
     justify-content: center;
     margin-bottom: 48px;
     align-items: center;
+    margin-top: 48px;
 }
 
 .index-section {
