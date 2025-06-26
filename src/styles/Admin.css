@@ -1,0 +1,133 @@
+.admin-root {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.admin-center {
+    text-align: center;
+}
+
+.admin-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #7c4700;
+    margin-bottom: 0.5rem;
+}
+
+.admin-desc {
+    color: #4b5563;
+}
+
+.admin-stats-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .admin-stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.admin-stats-card-title {
+    color: #b45309;
+}
+
+.admin-stats-card-value {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #7c4700;
+}
+
+.admin-stats-card-desc {
+    font-size: 0.95rem;
+    color: #4b5563;
+}
+
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th {
+    text-align: left;
+    padding: 0.75rem;
+    font-weight: 600;
+    color: #7c4700;
+    background: #fffbe6;
+}
+
+.admin-table td {
+    padding: 0.75rem;
+    color: #4b5563;
+}
+
+.admin-table tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.2s;
+}
+
+.admin-table tr:hover {
+    background: #fff9e6;
+}
+
+.admin-badge-admin {
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.admin-badge-user {
+    border: 1px solid #eab308;
+    color: #b45309;
+    background: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.admin-action-btn {
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+}
+
+.admin-access-denied {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.admin-spinner {
+    display: block;
+    margin: 0 auto;
+    border-radius: 9999px;
+    height: 48px;
+    width: 48px;
+    border-bottom: 2px solid #eab308;
+    animation: admin-spin 1s linear infinite;
+}
+
+@keyframes admin-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.admin-loading-text {
+    margin-top: 1rem;
+    color: #4b5563;
+}

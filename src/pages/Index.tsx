@@ -1,46 +1,46 @@
-
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import logo from "../images/logo.png";
+import '../styles/Index.css';
 
 const Index = () => {
   const { currentUser } = useAuth();
 
   return (
-    <div className="min-h-screen">
+    <div className="index-root">
       {/* Hero Section */}
-      <section className="relative py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="w-24 h-24 breakfast-gradient rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-white font-bold text-4xl">BB</span>
+      <section
+        className="index-hero-section"
+      >
+        <div className="index-hero-inner">
+          <div className="index-hero-logo-wrap">
+            <div className="index-hero-logo-bg">
+              <img src={logo} alt="logo" className="index-hero-logo" />
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold text-breakfast-800 mb-6">
-              Breakfast Buddy
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Your perfect breakfast companion. Order delicious morning meals delivered fresh to your campus location. 
+            <p className="index-hero-desc">
+              Your perfect breakfast companion. Order delicious morning meals delivered fresh to your campus location.
               Start your day right with our carefully curated breakfast menu.
             </p>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+
+          <div className="index-hero-btns">
             {currentUser ? (
               <>
-                <Button asChild size="lg" className="breakfast-gradient text-white text-lg px-8 py-3">
+                <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
                   <Link to="/dashboard">Go to Dashboard</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="text-lg px-8 py-3">
+                <Button asChild variant="outline" size="lg" style={{ fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
                   <Link to="/menu">Browse Menu</Link>
                 </Button>
               </>
             ) : (
               <>
-                <Button asChild size="lg" className="breakfast-gradient text-white text-lg px-8 py-3">
+                <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
                   <Link to="/signup">Get Started</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="text-lg px-8 py-3">
+                <Button asChild variant="outline" size="lg" style={{ fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
                   <Link to="/login">Sign In</Link>
                 </Button>
               </>
@@ -50,38 +50,38 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 px-4 bg-white/50">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-breakfast-800 mb-12">
+      <section className="index-section">
+        <div className="index-section-inner">
+          <h2 className="index-section-title">
             Why Choose Breakfast Buddy?
           </h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="p-8">
-                <div className="text-6xl mb-4">🚀</div>
-                <h3 className="text-xl font-semibold text-breakfast-800 mb-3">Fast Delivery</h3>
-                <p className="text-gray-600">
+
+          <div className="index-features-grid">
+            <Card className="index-feature-card">
+              <CardContent style={{ padding: 32 }}>
+                <div className="index-feature-icon">🚀</div>
+                <h3 className="index-feature-title">Fast Delivery</h3>
+                <p className="index-feature-desc">
                   Quick delivery to your campus block. Fresh breakfast ready when you need it.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="p-8">
-                <div className="text-6xl mb-4">🍳</div>
-                <h3 className="text-xl font-semibold text-breakfast-800 mb-3">Fresh Ingredients</h3>
-                <p className="text-gray-600">
+            <Card className="index-feature-card">
+              <CardContent style={{ padding: 32 }}>
+                <div className="index-feature-icon">🍳</div>
+                <h3 className="index-feature-title">Fresh Ingredients</h3>
+                <p className="index-feature-desc">
                   Made with the freshest ingredients and prepared with care for the perfect start to your day.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="p-8">
-                <div className="text-6xl mb-4">📱</div>
-                <h3 className="text-xl font-semibold text-breakfast-800 mb-3">Easy Ordering</h3>
-                <p className="text-gray-600">
+            <Card className="index-feature-card">
+              <CardContent style={{ padding: 32 }}>
+                <div className="index-feature-icon">📱</div>
+                <h3 className="index-feature-title">Easy Ordering</h3>
+                <p className="index-feature-desc">
                   Simple, intuitive ordering process. Select your location and get your favorite breakfast delivered.
                 </p>
               </CardContent>
@@ -91,21 +91,23 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      {!currentUser && (
-        <section className="py-16 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-breakfast-800 mb-6">
-              Ready to Start Your Morning Right?
-            </h2>
-            <p className="text-xl text-gray-600 mb-8">
-              Join thousands of students who trust Breakfast Buddy for their daily dose of deliciousness.
-            </p>
-            <Button asChild size="lg" className="breakfast-gradient text-white text-lg px-8 py-3">
-              <Link to="/signup">Create Your Account</Link>
-            </Button>
-          </div>
-        </section>
-      )}
+      {
+        !currentUser && (
+          <section className="index-cta-section">
+            <div className="index-cta-inner">
+              <h2 className="index-cta-title">
+                Ready to Start Your Morning Right?
+              </h2>
+              <p className="index-cta-desc">
+                Join thousands of students who trust Breakfast Buddy for their daily dose of deliciousness.
+              </p>
+              <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                <Link to="/signup">Create Your Account</Link>
+              </Button>
+            </div>
+          </section>
+        )
+      }
     </div>
   );
 };

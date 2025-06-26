@@ -1,0 +1,126 @@
+.index-root {
+    min-height: 100vh;
+}
+
+.index-hero-section {
+    position: relative;
+    padding: 5rem 1rem;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-image: url(../images/pexels-chudesabyvaut-1351350-2612340.jpg);
+}
+
+.index-hero-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.index-hero-logo-wrap {
+    margin-bottom: 32px;
+}
+
+.index-hero-logo-bg {
+    width: 96px;
+    height: 96px;
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+}
+
+.index-hero-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+}
+
+.index-hero-desc {
+    font-size: 20px;
+    color: #4b5563;
+    margin-bottom: 32px;
+    max-width: 768px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.index-hero-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 48px;
+    align-items: center;
+}
+
+.index-section {
+    padding: 4rem 1rem;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.index-section-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.index-section-title {
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    color: #7c4700;
+    margin-bottom: 48px;
+}
+
+.index-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 32px;
+    max-width: 100%;
+}
+
+.index-feature-card {
+    text-align: center;
+    transition: box-shadow 0.2s;
+}
+
+.index-feature-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.index-feature-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #7c4700;
+    margin-bottom: 12px;
+}
+
+.index-feature-desc {
+    color: #4b5563;
+}
+
+.index-cta-section {
+    padding: 4rem 1rem;
+}
+
+.index-cta-inner {
+    max-width: 672px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.index-cta-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #7c4700;
+    margin-bottom: 24px;
+}
+
+.index-cta-desc {
+    font-size: 20px;
+    color: #4b5563;
+    margin-bottom: 32px;
+}
