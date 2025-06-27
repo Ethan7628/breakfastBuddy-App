@@ -46,7 +46,7 @@ const ADMIN_EMAIL = 'kusasirakwe.ethan.upti@gmail.com';
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const signup = async (email: string, password: string, name: string): Promise<void> => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       uid: user.uid,
       name,
       email,
-      isAdmin: email === ADMIN_EMAIL, // Check against hardcoded admin email
+      isAdmin: email === ADMIN_EMAIL,
       createdAt: new Date().toISOString()
     };
 
@@ -91,11 +91,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userDoc = await getDoc(doc(db, 'users', user.uid));
 
           if (userDoc.exists()) {
-            const data = userDoc.data();
             setUserData({
-              ...data,
+              ...userDoc.data(),
               uid: user.uid,
-              isAdmin: typeof data.isAdmin === 'boolean' ? data.isAdmin : (user.email === ADMIN_EMAIL)
+              isAdmin: user.email === ADMIN_EMAIL // Check against hardcoded admin email
             } as UserData);
           }
         } catch (error) {
