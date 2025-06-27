@@ -80,12 +80,12 @@ const Menu = () => {
           });
           setCart(cartMap);
         } catch (err) {
-          console.error('Error loading cart:', err);
-          toast({
-            title: 'Error loading cart',
-            description: 'Please refresh the page',
-            variant: 'destructive'
-          });
+          // console.error('Error loading cart:', err);
+          // toast({
+          //   title: 'Error loading cart',
+          //   description: 'Please refresh the page',
+          //   variant: 'destructive'
+          // });
         }
       }
     };
