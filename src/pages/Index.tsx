@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import logo from "../images/logo.png";
 import '../styles/Index.css';
+import { setupAdminAccount } from '@/utils/adminSetup';
 
 const Index = () => {
   const { currentUser } = useAuth();
@@ -111,6 +112,20 @@ const Index = () => {
           </section>
         )
       }
+      {currentUser?.email === 'kusasirakwe.ethan.upti@gmail.com' && (
+        <Button
+          onClick={async () => {
+            const success = await setupAdminAccount();
+            if (success) {
+              alert('Admin account setup complete!');
+            } else {
+              alert('Failed to setup admin account');
+            }
+          }}
+        >
+          Setup Admin Account
+        </Button>
+      )}
     </div>
   );
 };
