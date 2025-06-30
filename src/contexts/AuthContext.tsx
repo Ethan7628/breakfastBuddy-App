@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   User,
@@ -40,7 +41,7 @@ export const useAuth = () => {
   return context;
 };
 
-// Hardcoded admin email
+// Hardcoded admin email - this is our custom admin system
 const ADMIN_EMAIL = 'kusasirakwe.ethan.upti@gmail.com';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -56,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       uid: user.uid,
       name,
       email,
-      isAdmin: email === ADMIN_EMAIL,
+      isAdmin: email === ADMIN_EMAIL, // Only our hardcoded email gets admin access
       createdAt: new Date().toISOString()
     };
 
@@ -91,11 +92,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userDoc = await getDoc(doc(db, 'users', user.uid));
 
           if (userDoc.exists()) {
+            const docData = userDoc.data();
             setUserData({
-              ...userDoc.data(),
+              ...docData,
               uid: user.uid,
-              isAdmin: user.email === ADMIN_EMAIL // Check against hardcoded admin email
+              isAdmin: user.email === ADMIN_EMAIL // Always check against hardcoded admin email
             } as UserData);
+          } else {
+            // If user document doesn't exist, create it
+            const newUserData: UserData = {
+              uid: user.uid,
+              name: user.displayName || 'User',
+              email: user.email || '',
+              isAdmin: user.email === ADMIN_EMAIL,
+              createdAt: new Date().toISOString()
+            };
+            await setDoc(doc(db, 'users', user.uid), newUserData);
+            setUserData(newUserData);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);

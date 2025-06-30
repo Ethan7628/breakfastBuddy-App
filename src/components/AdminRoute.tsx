@@ -14,7 +14,10 @@ const AdminRoute = () => {
     );
   }
 
-  return currentUser?.email === adminEmail ? <Outlet /> : <Navigate to="/" replace />;
+  // Check both currentUser email and userData.isAdmin for double security
+  const isAdmin = currentUser?.email === adminEmail && userData?.isAdmin === true;
+  
+  return isAdmin ? <Outlet /> : <Navigate to="/" replace />;
 };
 
 export default AdminRoute;
