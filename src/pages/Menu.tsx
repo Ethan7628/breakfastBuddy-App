@@ -39,7 +39,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
       id: meal.idMeal,
       name: meal.strMeal,
       description: meal.strInstructions.substring(0, 100) + '...',
-      price: Math.random() * 15 + 5,
+      price: Math.floor((Math.random() * 15 + 5) * 3700), // Convert to UGX (approx 3700 UGX per USD)
       category: 'Breakfast Special',
       image: meal.strMealThumb,
       popular: Math.random() > 0.7
@@ -266,7 +266,7 @@ const Menu = () => {
                   Cart: {getTotalItems()} items
                 </span>
                 <span className="menu-cart-total text-breakfast-800 font-bold">
-                  Total: ${getTotalPrice().toFixed(2)}
+                  Total: UGX {getTotalPrice().toLocaleString()}
                 </span>
               </div>
               <Button
@@ -304,7 +304,7 @@ const Menu = () => {
             <CardContent>
               <div className="menu-item-content">
                 <span className="menu-item-price text-breakfast-800 font-bold">
-                  ${item.price.toFixed(2)}
+                  UGX {item.price.toLocaleString()}
                 </span>
                 <div className="menu-item-actions">
                   {cart[item.id] > 0 && (
