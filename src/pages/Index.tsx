@@ -1,10 +1,10 @@
+
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import logo from "../images/logo.png";
 import '../styles/Index.css';
-import { setupAdminAccount } from '@/utils/adminSetup';
 
 const Index = () => {
   const { currentUser } = useAuth();
@@ -12,44 +12,38 @@ const Index = () => {
   return (
     <div className="index-root">
       {/* Hero Section */}
-      <section
-        className="index-hero-section"
-      >
+      <section className="index-hero-section">
         <div className="index-hero-inner">
           <div className="index-hero-logo-wrap">
             <div className="index-hero-logo-bg">
-              <img src={logo} alt="logo" className="index-hero-logo" />
+              <img src={logo} alt="Breakfast Buddy Logo" className="index-hero-logo" />
             </div>
             <p className="index-hero-desc">
               Your perfect breakfast companion. Order delicious morning meals delivered fresh to your campus location.
-              Start your day right with our carefully curated breakfast menu.
+              Start your day right with our carefully curated breakfast menu designed for students who value quality and convenience.
               <div className="index-hero-btns">
                 {currentUser ? (
                   <>
-                    <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                    <Button asChild size="lg" className="bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-500 hover:to-yellow-400 text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link to="/dashboard">Go to Dashboard</Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" style={{ fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                    <Button asChild variant="outline" size="lg" className="bg-white/90 backdrop-blur-sm border-2 border-white text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg hover:bg-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link to="/menu">Browse Menu</Link>
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                    <Button asChild size="lg" className="bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-500 hover:to-yellow-400 text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link to="/signup">Get Started</Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" style={{ fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
+                    <Button asChild variant="outline" size="lg" className="bg-white/90 backdrop-blur-sm border-2 border-white text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg hover:bg-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link to="/login">Sign In</Link>
                     </Button>
                   </>
                 )}
               </div>
             </p>
-
-
           </div>
-
-
         </div>
       </section>
 
@@ -62,31 +56,31 @@ const Index = () => {
 
           <div className="index-features-grid">
             <Card className="index-feature-card">
-              <CardContent style={{ padding: 32 }}>
+              <CardContent style={{ padding: '2rem' }}>
                 <div className="index-feature-icon">🚀</div>
-                <h3 className="index-feature-title">Fast Delivery</h3>
+                <h3 className="index-feature-title">Lightning Fast Delivery</h3>
                 <p className="index-feature-desc">
-                  Quick delivery to your campus block. Fresh breakfast ready when you need it.
+                  Get your breakfast delivered to your campus block in under 30 minutes. Fresh, hot, and ready when you need it most.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="index-feature-card">
-              <CardContent style={{ padding: 32 }}>
+              <CardContent style={{ padding: '2rem' }}>
                 <div className="index-feature-icon">🍳</div>
-                <h3 className="index-feature-title">Fresh Ingredients</h3>
+                <h3 className="index-feature-title">Premium Fresh Ingredients</h3>
                 <p className="index-feature-desc">
-                  Made with the freshest ingredients and prepared with care for the perfect start to your day.
+                  Every meal is crafted with the finest, locally-sourced ingredients. Nutritious, delicious, and perfect for busy students.
                 </p>
               </CardContent>
             </Card>
 
             <Card className="index-feature-card">
-              <CardContent style={{ padding: 32 }}>
+              <CardContent style={{ padding: '2rem' }}>
                 <div className="index-feature-icon">📱</div>
-                <h3 className="index-feature-title">Easy Ordering</h3>
+                <h3 className="index-feature-title">Seamless Experience</h3>
                 <p className="index-feature-desc">
-                  Simple, intuitive ordering process. Select your location and get your favorite breakfast delivered.
+                  Intuitive ordering, real-time tracking, and personalized recommendations. Your perfect breakfast is just a few taps away.
                 </p>
               </CardContent>
             </Card>
@@ -95,23 +89,21 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      {
-        !currentUser && (
-          <section className="index-cta-section">
-            <div className="index-cta-inner">
-              <h2 className="index-cta-title">
-                Ready to Start Your Morning Right?
-              </h2>
-              <p className="index-cta-desc">
-                Join thousands of students who trust Breakfast Buddy for their daily dose of deliciousness.
-              </p>
-              <Button asChild size="lg" style={{ background: 'linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%)', color: '#fff', fontSize: 18, padding: '0.75rem 2rem', borderRadius: 8, fontWeight: 500 }}>
-                <Link to="/signup">Create Your Account</Link>
-              </Button>
-            </div>
-          </section>
-        )
-      }
+      {!currentUser && (
+        <section className="index-cta-section">
+          <div className="index-cta-inner">
+            <h2 className="index-cta-title">
+              Ready to Transform Your Mornings?
+            </h2>
+            <p className="index-cta-desc">
+              Join thousands of satisfied students who've made Breakfast Buddy their go-to morning fuel. Your taste buds will thank you.
+            </p>
+            <Button asChild size="lg" className="bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-500 hover:to-yellow-400 text-gray-800 font-semibold px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 text-lg">
+              <Link to="/signup">Start Your Journey</Link>
+            </Button>
+          </div>
+        </section>
+      )}
     </div>
   );
 };
