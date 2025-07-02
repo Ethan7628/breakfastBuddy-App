@@ -1,21 +1,9 @@
 
 .dashboard-root {
     min-height: 100vh;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #2d1b69 100%);
+    background: linear-gradient(135deg, #f7f3f0 0%, #ede4d3 100%);
     position: relative;
     overflow-x: hidden;
-}
-
-.dashboard-root::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%);
-    pointer-events: none;
 }
 
 .dashboard-container {
@@ -30,54 +18,27 @@
     text-align: center;
     margin-bottom: 3rem;
     padding: 2.5rem;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(20px);
+    background: #ffffff;
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid #e5ddd5;
+    box-shadow: 0 8px 32px rgba(139, 69, 19, 0.1);
     position: relative;
     overflow: hidden;
-}
-
-.dashboard-welcome::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.8s ease;
-}
-
-.dashboard-welcome:hover::before {
-    left: 100%;
 }
 
 .dashboard-welcome-title {
     font-size: 2.8rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #06b6d4 100%);
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 1rem;
-    text-shadow: 0 0 30px rgba(167, 139, 250, 0.5);
-    animation: glow 2s ease-in-out infinite alternate;
-}
-
-@keyframes glow {
-    from {
-        text-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
-    }
-    to {
-        text-shadow: 0 0 40px rgba(167, 139, 250, 0.8);
-    }
 }
 
 .dashboard-welcome-desc {
     font-size: 1.2rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: #8b4513;
     max-width: 640px;
     margin: 0 auto;
     line-height: 1.6;
@@ -97,46 +58,29 @@
 }
 
 .dashboard-card-elevated {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(20px);
+    background: #ffffff;
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #e5ddd5;
     padding: 0;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(139, 69, 19, 0.1);
     position: relative;
     overflow: hidden;
 }
 
-.dashboard-card-elevated::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #a78bfa, #06b6d4, #10b981);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
 .dashboard-card-elevated:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    border-color: rgba(167, 139, 250, 0.3);
-}
-
-.dashboard-card-elevated:hover::before {
-    opacity: 1;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(139, 69, 19, 0.15);
 }
 
 .dashboard-card-header {
     padding: 2rem 2rem 1.5rem 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #f0e6d2;
 }
 
 .dashboard-card-title {
     font-size: 1.5rem;
-    color: #ffffff;
+    color: #8b4513;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -164,12 +108,12 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.2rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #f0e6d2;
     transition: all 0.3s ease;
 }
 
 .dashboard-flex-between:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: #faf8f5;
     margin: 0 -2rem;
     padding: 1.2rem 2rem;
     border-radius: 12px;
@@ -183,80 +127,49 @@
     display: block;
     font-size: 1rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: #8b4513;
     margin-bottom: 0.75rem;
 }
 
 .dashboard-location-info {
     padding: 1.5rem;
-    background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(6, 182, 212, 0.1));
-    border: 2px solid rgba(167, 139, 250, 0.3);
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    border: 2px solid #e6c200;
     border-radius: 16px;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(10px);
-}
-
-.dashboard-location-info::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #a78bfa, #06b6d4);
 }
 
 .dashboard-location-info p {
     font-size: 1rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
+    color: #8b4513;
     margin: 0;
 }
 
 .dashboard-btn-primary {
-    background: linear-gradient(135deg, #a78bfa 0%, #06b6d4 100%);
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
     color: #ffffff;
     font-size: 1rem;
     font-weight: 600;
     border-radius: 12px;
     width: 100%;
     height: 3rem;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
     border: none;
-    box-shadow: 0 8px 25px rgba(167, 139, 250, 0.4);
-    position: relative;
-    overflow: hidden;
-}
-
-.dashboard-btn-primary::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: all 0.6s ease;
+    box-shadow: 0 4px 16px rgba(139, 69, 19, 0.3);
 }
 
 .dashboard-btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 35px rgba(167, 139, 250, 0.6);
-}
-
-.dashboard-btn-primary:hover::before {
-    width: 300px;
-    height: 300px;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(139, 69, 19, 0.4);
 }
 
 .dashboard-btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 4px 15px rgba(167, 139, 250, 0.3);
+    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.2);
 }
 
 .dashboard-quick-actions {
@@ -286,50 +199,34 @@
     font-size: 1.125rem;
     font-weight: 600;
     border-radius: 16px;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
     border: 2px solid transparent;
     position: relative;
     overflow: hidden;
 }
 
-.dashboard-quick-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.6s ease;
-}
-
-.dashboard-quick-btn:hover::before {
-    left: 100%;
-}
-
 .dashboard-quick-btn-primary {
-    background: linear-gradient(135deg, #a78bfa 0%, #06b6d4 100%);
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
     color: #ffffff;
-    box-shadow: 0 8px 25px rgba(167, 139, 250, 0.4);
+    box-shadow: 0 4px 16px rgba(139, 69, 19, 0.3);
 }
 
 .dashboard-quick-btn-primary:hover {
-    transform: translateY(-6px) scale(1.05);
-    box-shadow: 0 20px 40px rgba(167, 139, 250, 0.6);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(139, 69, 19, 0.4);
 }
 
 .dashboard-quick-btn-outline {
-    border: 2px solid rgba(167, 139, 250, 0.4);
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
+    border: 2px solid #d2b48c;
+    color: #8b4513;
+    background: #ffffff;
 }
 
 .dashboard-quick-btn-outline:hover {
-    background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(6, 182, 212, 0.1));
-    border-color: rgba(167, 139, 250, 0.6);
-    transform: translateY(-6px) scale(1.05);
-    box-shadow: 0 20px 40px rgba(167, 139, 250, 0.3);
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    border-color: #e6c200;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(255, 213, 79, 0.3);
 }
 
 @media (max-width: 768px) {

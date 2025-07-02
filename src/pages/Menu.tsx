@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -39,7 +38,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
       id: meal.idMeal,
       name: meal.strMeal,
       description: meal.strInstructions.substring(0, 100) + '...',
-      price: Math.floor((Math.random() * 15 + 5) * 3700), // Convert to UGX (approx 3700 UGX per USD)
+      price: Math.floor((Math.random() * 20 + 8) * 3700), // Better price range in UGX (8-28 USD * 3700)
       category: 'Breakfast Special',
       image: meal.strMealThumb,
       popular: Math.random() > 0.7
@@ -188,7 +187,7 @@ const Menu = () => {
 
       toast({
         title: 'Order placed successfully!',
-        description: `Your order of $${totalAmount.toFixed(2)} has been submitted for delivery to ${userData?.selectedBlock || 'your location'}.`
+        description: `Your order of UGX ${totalAmount.toLocaleString()} has been submitted for delivery to ${userData?.selectedBlock || 'your location'}.`
       });
 
     } catch (error) {

@@ -3,69 +3,36 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 1rem 4rem 1rem;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #2d1b69 100%);
+    background: linear-gradient(135deg, #f7f3f0 0%, #ede4d3 100%);
     min-height: 100vh;
     position: relative;
-}
-
-.settings-root::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 25% 75%, rgba(167, 139, 250, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 75% 25%, rgba(6, 182, 212, 0.15) 0%, transparent 50%);
-    pointer-events: none;
 }
 
 .settings-center {
     text-align: center;
     margin-bottom: 4rem;
     padding: 3rem;
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(25px);
+    background: #ffffff;
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #e5ddd5;
     position: relative;
     z-index: 1;
     overflow: hidden;
-}
-
-.settings-center::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #a78bfa, #06b6d4, #10b981);
+    box-shadow: 0 8px 32px rgba(139, 69, 19, 0.1);
 }
 
 .settings-title {
     font-size: 3rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #06b6d4 100%);
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 1rem;
-    text-shadow: 0 0 30px rgba(167, 139, 250, 0.5);
-    animation: titleGlow 3s ease-in-out infinite alternate;
-}
-
-@keyframes titleGlow {
-    from {
-        text-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
-    }
-    to {
-        text-shadow: 0 0 40px rgba(167, 139, 250, 0.8);
-    }
 }
 
 .settings-desc {
-    color: rgba(255, 255, 255, 0.8);
+    color: #8b4513;
     font-size: 1.2rem;
     line-height: 1.7;
     font-weight: 300;
@@ -92,39 +59,23 @@
 }
 
 .settings-card {
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #e5ddd5;
     border-radius: 20px;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    background: #ffffff;
+    box-shadow: 0 4px 16px rgba(139, 69, 19, 0.1);
     overflow: hidden;
     position: relative;
 }
 
-.settings-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.6s ease;
-}
-
-.settings-card:hover::before {
-    left: 100%;
-}
-
 .settings-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    border-color: rgba(167, 139, 250, 0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(139, 69, 19, 0.15);
+    border-color: #d2b48c;
 }
 
 .settings-card-title {
-    color: #ffffff;
+    color: #8b4513;
     font-weight: 700;
     font-size: 1.4rem;
     display: flex;
@@ -146,52 +97,34 @@
 
 .settings-form-group label {
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: #8b4513;
     font-size: 1rem;
 }
 
 .settings-btn {
-    background: linear-gradient(135deg, #a78bfa 0%, #06b6d4 100%);
+    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
     color: #ffffff;
     font-weight: 600;
     border: none;
     padding: 1rem 2rem;
     border-radius: 12px;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
     font-size: 1rem;
-    box-shadow: 0 8px 25px rgba(167, 139, 250, 0.4);
+    box-shadow: 0 4px 16px rgba(139, 69, 19, 0.3);
     position: relative;
     overflow: hidden;
 }
 
-.settings-btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: all 0.6s ease;
-}
-
 .settings-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 35px rgba(167, 139, 250, 0.6);
-}
-
-.settings-btn:hover::before {
-    width: 300px;
-    height: 300px;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(139, 69, 19, 0.4);
 }
 
 .settings-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 4px 15px rgba(167, 139, 250, 0.3);
+    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.2);
 }
 
 .settings-info {
@@ -205,7 +138,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #f0e6d2;
     transition: all 0.3s ease;
 }
 
@@ -214,7 +147,7 @@
 }
 
 .settings-info-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: #faf8f5;
     margin: 0 -2rem;
     padding: 1.5rem 2rem;
     border-radius: 12px;
@@ -222,12 +155,12 @@
 
 .settings-info-label {
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: #8b4513;
     font-size: 1rem;
 }
 
 .settings-info-value {
-    color: rgba(255, 255, 255, 0.8);
+    color: #6b4423;
     font-weight: 500;
     font-size: 1rem;
     text-align: right;
@@ -245,17 +178,17 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    color: rgba(255, 255, 255, 0.9);
+    color: #8b4513;
     font-weight: 500;
     padding: 1rem;
     border-radius: 12px;
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.03);
+    background: #faf8f5;
 }
 
 .settings-status-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(8px);
+    background: #f5f1eb;
+    transform: translateX(4px);
 }
 
 .settings-status-dot {
@@ -268,22 +201,12 @@
 
 .settings-status-online {
     background: linear-gradient(135deg, #10b981, #22c55e);
-    box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
-    animation: pulse-green 2s ease-in-out infinite;
-}
-
-@keyframes pulse-green {
-    0%, 100% {
-        box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
-    }
-    50% {
-        box-shadow: 0 0 25px rgba(34, 197, 94, 0.8);
-    }
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
 }
 
 .settings-status-offline {
     background: linear-gradient(135deg, #ef4444, #dc2626);
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
 }
 
 @media (max-width: 768px) {
