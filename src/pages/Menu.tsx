@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
       id: meal.idMeal,
       name: meal.strMeal,
       description: meal.strInstructions.substring(0, 100) + '...',
-      price: Math.floor((Math.random() * 20 + 8) * 3700), // Better price range in UGX (8-28 USD * 3700)
+      price: Math.random() * 15 + 5,
       category: 'Breakfast Special',
       image: meal.strMealThumb,
       popular: Math.random() > 0.7
@@ -187,7 +188,7 @@ const Menu = () => {
 
       toast({
         title: 'Order placed successfully!',
-        description: `Your order of UGX ${totalAmount.toLocaleString()} has been submitted for delivery to ${userData?.selectedBlock || 'your location'}.`
+        description: `Your order of $${totalAmount.toFixed(2)} has been submitted for delivery to ${userData?.selectedBlock || 'your location'}.`
       });
 
     } catch (error) {
@@ -265,7 +266,7 @@ const Menu = () => {
                   Cart: {getTotalItems()} items
                 </span>
                 <span className="menu-cart-total text-breakfast-800 font-bold">
-                  Total: UGX {getTotalPrice().toLocaleString()}
+                  Total: ${getTotalPrice().toFixed(2)}
                 </span>
               </div>
               <Button
@@ -303,7 +304,7 @@ const Menu = () => {
             <CardContent>
               <div className="menu-item-content">
                 <span className="menu-item-price text-breakfast-800 font-bold">
-                  UGX {item.price.toLocaleString()}
+                  ${item.price.toFixed(2)}
                 </span>
                 <div className="menu-item-actions">
                   {cart[item.id] > 0 && (
