@@ -27,11 +27,11 @@ interface Order {
 }
 
 const blocks = [
-  { id: 'block-a', name: 'Block A - North Campus' },
-  { id: 'block-b', name: 'Block B - South Campus' },
-  { id: 'block-c', name: 'Block C - East Campus' },
-  { id: 'block-d', name: 'Block D - West Campus' },
-  { id: 'block-e', name: 'Block E - Central Campus' },
+  { id: 'block-a', name: 'Block A ' },
+  { id: 'block-b', name: 'Block B ' },
+  { id: 'block-c', name: 'Block C ' },
+  { id: 'block-d', name: 'Block D ' },
+  { id: 'block-e', name: 'Block E ' },
 ];
 
 const Dashboard = () => {
@@ -55,13 +55,13 @@ const Dashboard = () => {
           collection(db, 'orders'),
           where('userId', '==', currentUser.uid)
         );
-        
+
         const snapshot = await getDocs(ordersQuery);
-        const ordersData = snapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
+        const ordersData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
         } as Order));
-        
+
         console.log('User orders fetched:', ordersData.length);
         setUserOrders(ordersData);
       } catch (error) {
@@ -88,7 +88,7 @@ const Dashboard = () => {
       setIsUpdating(true);
       console.log('Updating user block to:', selectedBlock);
       await updateUserBlock(selectedBlock);
-      toast({ 
+      toast({
         title: 'Location updated successfully!',
         description: 'Your campus location has been saved.',
       });
@@ -122,7 +122,7 @@ const Dashboard = () => {
       itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
     });
   });
-  const favoriteItem = Object.keys(itemCounts).length > 0 
+  const favoriteItem = Object.keys(itemCounts).length > 0
     ? Object.keys(itemCounts).reduce((a, b) => itemCounts[a] > itemCounts[b] ? a : b)
     : '-';
 
