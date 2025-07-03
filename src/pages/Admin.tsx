@@ -56,9 +56,11 @@ const Admin = () => {
     const fetchData = async () => {
       try {
         console.log('Fetching admin data...');
+        setLoading(true);
         
-        // Fetch users - simplified query without orderBy to avoid index issues
+        // Fetch users
         try {
+          console.log('Fetching users...');
           const usersSnapshot = await getDocs(collection(db, 'users'));
           const usersData = usersSnapshot.docs.map(doc => ({ 
             uid: doc.id, 
@@ -68,17 +70,12 @@ const Admin = () => {
           setUsers(usersData);
         } catch (userError) {
           console.error('Error fetching users:', userError);
-          // Try without orderBy if index doesn't exist
-          const usersSnapshot = await getDocs(collection(db, 'users'));
-          const usersData = usersSnapshot.docs.map(doc => ({ 
-            uid: doc.id, 
-            ...doc.data() 
-          } as User));
-          setUsers(usersData);
+          setUsers([]);
         }
 
         // Fetch all cart items
         try {
+          console.log('Fetching cart items...');
           const cartData = await getAllCarts();
           console.log('Cart items fetched:', cartData.length);
           setCartItems(cartData as CartItem[]);
@@ -87,14 +84,31 @@ const Admin = () => {
           setCartItems([]);
         }
 
-        // Fetch all orders - simplified query
+        // Fetch all orders with improved error handling
         try {
+          console.log('Fetching all orders...');
           const ordersSnapshot = await getDocs(collection(db, 'orders'));
-          const ordersData = ordersSnapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data() 
-          } as Order));
-          console.log('Orders fetched:', ordersData.length);
+          const ordersData = ordersSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return { 
+              id: doc.id, 
+              ...data,
+              // Ensure required fields exist
+              userEmail: data.userEmail || 'Unknown',
+              userName: data.userName || 'Unknown User',
+              items: data.items || [],
+              totalAmount: data.totalAmount || 0,
+              status: data.status || 'pending',
+              deliveryLocation: data.deliveryLocation || 'Not specified',
+              createdAt: data.createdAt || new Date().toISOString()
+            } as Order;
+          });
+          
+          // Sort orders by creation date (newest first)
+          ordersData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          
+          console.log('Orders fetched and sorted:', ordersData.length);
+          console.log('Sample order:', ordersData[0]);
           setOrders(ordersData);
         } catch (orderError) {
           console.error('Error fetching orders:', orderError);
@@ -199,15 +213,6 @@ const Admin = () => {
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
-  // Group cart items by user
-  const ordersByUser = cartItems.reduce((acc, item) => {
-    if (!acc[item.userId]) {
-      acc[item.userId] = [];
-    }
-    acc[item.userId].push(item);
-    return acc;
-  }, {} as Record<string, CartItem[]>);
-
   return (
     <div className="admin-root">
       <div className="admin-center">
@@ -233,7 +238,7 @@ const Admin = () => {
           </CardHeader>
           <CardContent>
             <div className="admin-stats-card-value">{totalOrders}</div>
-            <p className="admin-stats-card-desc">Completed orders</p>
+            <p className="admin-stats-card-desc">All orders placed</p>
           </CardContent>
         </Card>
 
@@ -244,6 +249,16 @@ const Admin = () => {
           <CardContent>
             <div className="admin-stats-card-value">UGX {totalRevenue.toLocaleString()}</div>
             <p className="admin-stats-card-desc">Total order value</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="admin-stats-card-title">Admin Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="admin-stats-card-value">{adminUsers}</div>
+            <p className="admin-stats-card-desc">System administrators</p>
           </CardContent>
         </Card>
       </div>
@@ -272,7 +287,7 @@ const Admin = () => {
                 {orders.map((order) => (
                   <tr key={order.id}>
                     <td className="text-breakfast-800 font-mono text-xs">
-                      {order.id.substring(0, 8)}...
+                      #{order.id.substring(0, 8)}...
                     </td>
                     <td className="text-breakfast-800">
                       <div>
@@ -282,17 +297,21 @@ const Admin = () => {
                     </td>
                     <td className="text-breakfast-700">
                       <div className="max-w-xs">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="text-xs">
-                            {item.quantity}x {item.name}
-                          </div>
-                        ))}
+                        {order.items && order.items.length > 0 ? (
+                          order.items.map((item, idx) => (
+                            <div key={idx} className="text-xs">
+                              {item.quantity}x {item.name}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-gray-500">No items</div>
+                        )}
                       </div>
                     </td>
                     <td className="text-breakfast-800 font-semibold">
                       UGX {order.totalAmount.toLocaleString()}
                     </td>
-                    <td className="text-breakfast-700">{order.deliveryLocation}</td>
+                    <td className="text-breakfast-700 text-xs">{order.deliveryLocation}</td>
                     <td>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -304,7 +323,7 @@ const Admin = () => {
                         {order.status}
                       </span>
                     </td>
-                    <td className="text-breakfast-600">
+                    <td className="text-breakfast-600 text-xs">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                     <td>

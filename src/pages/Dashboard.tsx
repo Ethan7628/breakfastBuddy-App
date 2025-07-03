@@ -1,12 +1,30 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import '../styles/Dashboard.css';
+
+interface Order {
+  id: string;
+  userId: string;
+  items: Array<{
+    itemId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    total: number;
+  }>;
+  totalAmount: number;
+  status: string;
+  deliveryLocation: string;
+  createdAt: string;
+}
 
 const blocks = [
   { id: 'block-a', name: 'Block A - North Campus' },
@@ -17,10 +35,44 @@ const blocks = [
 ];
 
 const Dashboard = () => {
-  const { userData, updateUserBlock } = useAuth();
+  const { userData, updateUserBlock, currentUser } = useAuth();
   const [selectedBlock, setSelectedBlock] = useState(userData?.selectedBlock || '');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [userOrders, setUserOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserOrders = async () => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log('Fetching user orders for dashboard...');
+        const ordersQuery = query(
+          collection(db, 'orders'),
+          where('userId', '==', currentUser.uid)
+        );
+        
+        const snapshot = await getDocs(ordersQuery);
+        const ordersData = snapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        } as Order));
+        
+        console.log('User orders fetched:', ordersData.length);
+        setUserOrders(ordersData);
+      } catch (error) {
+        console.error('Error fetching user orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserOrders();
+  }, [currentUser]);
 
   const handleBlockUpdate = async () => {
     if (!selectedBlock) {
@@ -53,6 +105,26 @@ const Dashboard = () => {
   };
 
   const selectedBlockName = blocks.find((b) => b.id === (userData?.selectedBlock || selectedBlock))?.name;
+
+  // Calculate user statistics
+  const totalOrders = userOrders.length;
+  const thisMonthOrders = userOrders.filter(order => {
+    const orderDate = new Date(order.createdAt);
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+  }).length;
+
+  // Find most frequently ordered item
+  const itemCounts: { [key: string]: number } = {};
+  userOrders.forEach(order => {
+    order.items.forEach(item => {
+      itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
+    });
+  });
+  const favoriteItem = Object.keys(itemCounts).length > 0 
+    ? Object.keys(itemCounts).reduce((a, b) => itemCounts[a] > itemCounts[b] ? a : b)
+    : '-';
 
   return (
     <div className="dashboard-root">
@@ -126,18 +198,28 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="dashboard-card-content dashboard-space-y-4">
-              <div className="dashboard-flex-between">
-                <span className="text-muted-foreground">Total Orders</span>
-                <span className="font-semibold text-lg text-breakfast-800">0</span>
-              </div>
-              <div className="dashboard-flex-between">
-                <span className="text-muted-foreground">Favorite Item</span>
-                <span className="font-semibold text-breakfast-800">-</span>
-              </div>
-              <div className="dashboard-flex-between">
-                <span className="text-muted-foreground">This Month</span>
-                <span className="font-semibold text-breakfast-800">0 orders</span>
-              </div>
+              {loading ? (
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="dashboard-flex-between">
+                    <span className="text-muted-foreground">Total Orders</span>
+                    <span className="font-semibold text-lg text-breakfast-800">{totalOrders}</span>
+                  </div>
+                  <div className="dashboard-flex-between">
+                    <span className="text-muted-foreground">Favorite Item</span>
+                    <span className="font-semibold text-breakfast-800 text-sm">{favoriteItem}</span>
+                  </div>
+                  <div className="dashboard-flex-between">
+                    <span className="text-muted-foreground">This Month</span>
+                    <span className="font-semibold text-breakfast-800">{thisMonthOrders} orders</span>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
