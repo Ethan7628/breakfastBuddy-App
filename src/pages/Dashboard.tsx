@@ -19,20 +19,36 @@ const blocks = [
 const Dashboard = () => {
   const { userData, updateUserBlock } = useAuth();
   const [selectedBlock, setSelectedBlock] = useState(userData?.selectedBlock || '');
+  const [isUpdating, setIsUpdating] = useState(false);
   const navigate = useNavigate();
 
   const handleBlockUpdate = async () => {
-    if (!selectedBlock) return;
+    if (!selectedBlock) {
+      toast({
+        title: 'Please select a location',
+        description: 'Choose your campus block first.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
+      setIsUpdating(true);
+      console.log('Updating user block to:', selectedBlock);
       await updateUserBlock(selectedBlock);
-      toast({ title: 'Location updated successfully!' });
+      toast({ 
+        title: 'Location updated successfully!',
+        description: 'Your campus location has been saved.',
+      });
     } catch (error) {
       console.error('Error updating block:', error);
       toast({
         title: 'Error updating location',
+        description: 'Please try again later.',
         variant: 'destructive',
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -83,14 +99,13 @@ const Dashboard = () => {
                 </Select>
               </div>
 
-              {selectedBlock !== userData?.selectedBlock && (
-                <Button
-                  onClick={handleBlockUpdate}
-                  className="dashboard-btn-primary"
-                >
-                  Update Location
-                </Button>
-              )}
+              <Button
+                onClick={handleBlockUpdate}
+                disabled={isUpdating || !selectedBlock}
+                className="dashboard-btn-primary"
+              >
+                {isUpdating ? 'Updating...' : 'Update Location'}
+              </Button>
 
               {userData?.selectedBlock && (
                 <div className="dashboard-location-info">

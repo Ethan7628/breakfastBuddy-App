@@ -75,17 +75,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateUserBlock = async (blockId: string): Promise<void> => {
     if (!currentUser) throw new Error('No user logged in');
 
-    await updateDoc(doc(db, 'users', currentUser.uid), {
-      selectedBlock: blockId
-    });
+    console.log('Updating user block in Firestore:', { userId: currentUser.uid, blockId });
+    
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        selectedBlock: blockId,
+        updatedAt: new Date().toISOString()
+      });
 
-    if (userData) {
-      setUserData({ ...userData, selectedBlock: blockId });
+      console.log('Successfully updated user block in Firestore');
+
+      // Update local state
+      if (userData) {
+        const updatedUserData = { ...userData, selectedBlock: blockId };
+        setUserData(updatedUserData);
+        console.log('Updated local user data:', updatedUserData);
+      }
+    } catch (error) {
+      console.error('Error updating user block in Firestore:', error);
+      throw error;
     }
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user?.email);
+      
       if (user) {
         setCurrentUser(user);
         try {
@@ -93,11 +108,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (userDoc.exists()) {
             const docData = userDoc.data();
-            setUserData({
+            const userData = {
               ...docData,
               uid: user.uid,
               isAdmin: user.email === ADMIN_EMAIL // Always check against hardcoded admin email
-            } as UserData);
+            } as UserData;
+            
+            console.log('User data loaded from Firestore:', userData);
+            setUserData(userData);
           } else {
             // If user document doesn't exist, create it
             const newUserData: UserData = {
@@ -109,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
             await setDoc(doc(db, 'users', user.uid), newUserData);
             setUserData(newUserData);
+            console.log('Created new user document:', newUserData);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
