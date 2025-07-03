@@ -1,4 +1,3 @@
-
 .dashboard-root {
     min-height: 100vh;
     background: linear-gradient(135deg, #fff9e6 0%, #fffbe6 100%);
@@ -26,8 +25,8 @@
     color: #7c4700;
     margin-bottom: 1rem;
     background: linear-gradient(135deg, #7c4700 0%, #a0522d 100%);
-    background-clip: text;
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -227,11 +226,11 @@
     .dashboard-welcome-title {
         font-size: 2rem;
     }
-    
+
     .dashboard-container {
         padding: 1.5rem 1rem 3rem 1rem;
     }
-    
+
     .dashboard-quick-btn {
         height: 6rem;
         font-size: 1rem;

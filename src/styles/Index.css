@@ -1,4 +1,3 @@
-
 .index-root {
     min-height: 100vh;
 }
@@ -62,6 +61,7 @@
     background-color: rgba(0, 0, 0, 0.2);
     padding: 2rem;
     border-radius: 16px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     animation: fadeInUp 0.8s ease-out 0.2s both;
@@ -196,6 +196,7 @@
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -206,16 +207,16 @@
     .index-hero-section {
         padding: 4rem 1rem 6rem 1rem;
     }
-    
+
     .index-hero-desc {
         font-size: 1.125rem;
         padding: 1.5rem;
     }
-    
+
     .index-section-title {
         font-size: 2rem;
     }
-    
+
     .index-cta-title {
         font-size: 2rem;
     }
