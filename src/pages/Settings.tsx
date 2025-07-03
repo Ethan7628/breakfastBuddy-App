@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -79,12 +78,8 @@ const Settings = () => {
               </div>
               <div className="settings-info-item">
                 <span className="settings-info-label">Account Type</span>
-                <span className="settings-info-value">
-                  {isAdmin ? (
-                    <span style={{ color: '#dc2626', fontWeight: 600 }}>Administrator</span>
-                  ) : (
-                    <span style={{ color: '#059669', fontWeight: 600 }}>User</span>
-                  )}
+                <span className={isAdmin ? "settings-account-type-admin" : "settings-account-type-user"}>
+                  {isAdmin ? "Administrator" : "User"}
                 </span>
               </div>
               <div className="settings-info-item">

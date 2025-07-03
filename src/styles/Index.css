@@ -148,7 +148,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 1.5rem;
+    margin: 20px auto 1.5rem;
     box-shadow: 0 4px 16px rgba(255, 213, 79, 0.3);
 }
 
@@ -163,6 +163,10 @@
     color: #6b7280;
     font-size: 1rem;
     line-height: 1.6;
+}
+
+.index-feature-card-content {
+    padding: 2rem;
 }
 
 .index-cta-section {
