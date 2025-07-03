@@ -27,9 +27,28 @@ interface CartItem {
   addedAt: string;
 }
 
+interface Order {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  items: Array<{
+    itemId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    total: number;
+  }>;
+  totalAmount: number;
+  status: string;
+  deliveryLocation: string;
+  createdAt: string;
+}
+
 const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const { userData } = useAuth();
 
@@ -45,6 +64,16 @@ const Admin = () => {
         // Fetch all cart items
         const cartData = await getAllCarts();
         setCartItems(cartData as CartItem[]);
+
+        // Fetch all orders
+        const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+        const ordersSnapshot = await getDocs(ordersQuery);
+        const ordersData = ordersSnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        } as Order));
+        setOrders(ordersData);
+
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -84,6 +113,30 @@ const Admin = () => {
     }
   };
 
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status: newStatus
+      });
+
+      setOrders(orders.map(order =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+
+      toast({
+        title: 'Order updated',
+        description: `Order status changed to ${newStatus}`,
+      });
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update order status',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (!userData?.isAdmin) {
     return (
       <div className="admin-access-denied">
@@ -112,8 +165,8 @@ const Admin = () => {
 
   const totalUsers = users.length;
   const adminUsers = users.filter(u => u.isAdmin).length;
-  const totalOrders = cartItems.length;
-  const totalRevenue = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalOrders = orders.length;
+  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
   // Group cart items by user
   const ordersByUser = cartItems.reduce((acc, item) => {
@@ -149,7 +202,7 @@ const Admin = () => {
           </CardHeader>
           <CardContent>
             <div className="admin-stats-card-value">{totalOrders}</div>
-            <p className="admin-stats-card-desc">Items in carts</p>
+            <p className="admin-stats-card-desc">Completed orders</p>
           </CardContent>
         </Card>
 
@@ -158,16 +211,122 @@ const Admin = () => {
             <CardTitle className="admin-stats-card-title">Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="admin-stats-card-value">${totalRevenue.toFixed(2)}</div>
-            <p className="admin-stats-card-desc">Total cart value</p>
+            <div className="admin-stats-card-value">UGX {totalRevenue.toLocaleString()}</div>
+            <p className="admin-stats-card-desc">Total order value</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* All Orders Table */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="admin-stats-card-title">All Orders ({orders.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td className="text-breakfast-800 font-mono text-xs">
+                      {order.id.substring(0, 8)}...
+                    </td>
+                    <td className="text-breakfast-800">
+                      <div>
+                        <div className="font-semibold">{order.userName}</div>
+                        <div className="text-xs text-breakfast-600">{order.userEmail}</div>
+                      </div>
+                    </td>
+                    <td className="text-breakfast-700">
+                      <div className="max-w-xs">
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="text-xs">
+                            {item.quantity}x {item.name}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="text-breakfast-800 font-semibold">
+                      UGX {order.totalAmount.toLocaleString()}
+                    </td>
+                    <td className="text-breakfast-700">{order.deliveryLocation}</td>
+                    <td>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'preparing' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'ready' ? 'bg-green-100 text-green-800' :
+                        order.status === 'delivered' ? 'bg-gray-100 text-gray-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="text-breakfast-600">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </td>
+                    <td>
+                      <div className="flex gap-1">
+                        {order.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateOrderStatus(order.id, 'preparing')}
+                            className="text-xs"
+                          >
+                            Start
+                          </Button>
+                        )}
+                        {order.status === 'preparing' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateOrderStatus(order.id, 'ready')}
+                            className="text-xs"
+                          >
+                            Ready
+                          </Button>
+                        )}
+                        {order.status === 'ready' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateOrderStatus(order.id, 'delivered')}
+                            className="text-xs"
+                          >
+                            Deliver
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {orders.length === 0 && (
+              <div className="text-center py-8 text-breakfast-600">
+                No orders found
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Cart Items Table */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="admin-stats-card-title">Recent Orders</CardTitle>
+          <CardTitle className="admin-stats-card-title">Recent Cart Items</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="admin-table-wrap">
@@ -189,9 +348,9 @@ const Admin = () => {
                     <tr key={item.id}>
                       <td className="text-breakfast-800">{user?.name || 'Unknown'}</td>
                       <td className="text-breakfast-700">{item.name}</td>
-                      <td className="text-breakfast-700">${item.price.toFixed(2)}</td>
+                      <td className="text-breakfast-700">UGX {item.price.toLocaleString()}</td>
                       <td className="text-breakfast-700">{item.quantity}</td>
-                      <td className="text-breakfast-800 font-semibold">${(item.price * item.quantity).toFixed(2)}</td>
+                      <td className="text-breakfast-800 font-semibold">UGX {(item.price * item.quantity).toLocaleString()}</td>
                       <td className="text-breakfast-600">{new Date(item.addedAt).toLocaleDateString()}</td>
                     </tr>
                   );
@@ -223,6 +382,7 @@ const Admin = () => {
               <tbody>
                 {users.map((user) => {
                   const userOrders = ordersByUser[user.uid] || [];
+                  const userOrderCount = orders.filter(order => order.userId === user.uid).length;
                   return (
                     <tr key={user.uid}>
                       <td className="text-breakfast-800">{user.name}</td>
@@ -237,7 +397,7 @@ const Admin = () => {
                       <td className="text-breakfast-700">
                         {user.selectedBlock ? user.selectedBlock.replace('block-', 'Block ').toUpperCase() : '-'}
                       </td>
-                      <td className="text-breakfast-700">{userOrders.length} items</td>
+                      <td className="text-breakfast-700">{userOrderCount} orders</td>
                       <td>
                         <Button
                           variant="outline"

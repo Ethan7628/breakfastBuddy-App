@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { addToUserCart, getUserCart, CartItem } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import '../styles/Menu.css';
 
@@ -39,7 +39,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
       id: meal.idMeal,
       name: meal.strMeal,
       description: meal.strInstructions.substring(0, 100) + '...',
-      price: Math.random() * 15 + 5,
+      price: Math.floor(Math.random() * 50000) + 15000, // UGX 15,000 - 65,000
       category: 'Breakfast Special',
       image: meal.strMealThumb,
       popular: Math.random() > 0.7
@@ -80,12 +80,7 @@ const Menu = () => {
           });
           setCart(cartMap);
         } catch (err) {
-          // console.error('Error loading cart:', err);
-          // toast({
-          //   title: 'Error loading cart',
-          //   description: 'Please refresh the page',
-          //   variant: 'destructive'
-          // });
+          console.error('Error loading cart:', err);
         }
       }
     };
@@ -152,8 +147,47 @@ const Menu = () => {
     }
   };
 
+  const clearUserCart = async () => {
+    if (!currentUser?.uid) return;
+
+    try {
+      // Get all cart items for this user
+      const cartQuery = query(
+        collection(db, 'userCarts'),
+        where('userId', '==', currentUser.uid)
+      );
+      const cartSnapshot = await getDocs(cartQuery);
+      
+      // Delete all cart items
+      const deletePromises = cartSnapshot.docs.map(docSnapshot => 
+        deleteDoc(doc(db, 'userCarts', docSnapshot.id))
+      );
+      
+      await Promise.all(deletePromises);
+      console.log('Cart cleared successfully');
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    }
+  };
+
   const handleCheckout = async () => {
-    if (!currentUser || Object.keys(cart).length === 0) return;
+    if (!currentUser || Object.keys(cart).length === 0) {
+      toast({
+        title: 'Cart is empty',
+        description: 'Please add items to your cart before checkout',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!userData?.selectedBlock) {
+      toast({
+        title: 'Delivery location required',
+        description: 'Please set your delivery location in Settings first',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     setIsCheckingOut(true);
 
@@ -183,12 +217,15 @@ const Menu = () => {
         createdAt: new Date().toISOString()
       });
 
-      // Clear cart
+      // Clear cart from Firestore
+      await clearUserCart();
+
+      // Clear local cart state
       setCart({});
 
       toast({
         title: 'Order placed successfully!',
-        description: `Your order of $${totalAmount.toFixed(2)} has been submitted for delivery to ${userData?.selectedBlock || 'your location'}.`
+        description: `Your order of UGX ${totalAmount.toLocaleString()} has been submitted for delivery to ${userData?.selectedBlock || 'your location'}.`
       });
 
     } catch (error) {
@@ -266,7 +303,7 @@ const Menu = () => {
                   Cart: {getTotalItems()} items
                 </span>
                 <span className="menu-cart-total text-breakfast-800 font-bold">
-                  Total: ${getTotalPrice().toFixed(2)}
+                  Total: UGX {getTotalPrice().toLocaleString()}
                 </span>
               </div>
               <Button
@@ -304,7 +341,7 @@ const Menu = () => {
             <CardContent>
               <div className="menu-item-content">
                 <span className="menu-item-price text-breakfast-800 font-bold">
-                  ${item.price.toFixed(2)}
+                  UGX {item.price.toLocaleString()}
                 </span>
                 <div className="menu-item-actions">
                   {cart[item.id] > 0 && (
