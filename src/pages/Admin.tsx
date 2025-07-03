@@ -55,30 +55,57 @@ const Admin = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch users
-        const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-        const usersSnapshot = await getDocs(usersQuery);
-        const usersData = usersSnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id } as User));
-        setUsers(usersData);
+        console.log('Fetching admin data...');
+        
+        // Fetch users - simplified query without orderBy to avoid index issues
+        try {
+          const usersSnapshot = await getDocs(collection(db, 'users'));
+          const usersData = usersSnapshot.docs.map(doc => ({ 
+            uid: doc.id, 
+            ...doc.data() 
+          } as User));
+          console.log('Users fetched:', usersData.length);
+          setUsers(usersData);
+        } catch (userError) {
+          console.error('Error fetching users:', userError);
+          // Try without orderBy if index doesn't exist
+          const usersSnapshot = await getDocs(collection(db, 'users'));
+          const usersData = usersSnapshot.docs.map(doc => ({ 
+            uid: doc.id, 
+            ...doc.data() 
+          } as User));
+          setUsers(usersData);
+        }
 
         // Fetch all cart items
-        const cartData = await getAllCarts();
-        setCartItems(cartData as CartItem[]);
+        try {
+          const cartData = await getAllCarts();
+          console.log('Cart items fetched:', cartData.length);
+          setCartItems(cartData as CartItem[]);
+        } catch (cartError) {
+          console.error('Error fetching cart items:', cartError);
+          setCartItems([]);
+        }
 
-        // Fetch all orders
-        const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-        const ordersSnapshot = await getDocs(ordersQuery);
-        const ordersData = ordersSnapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
-        } as Order));
-        setOrders(ordersData);
+        // Fetch all orders - simplified query
+        try {
+          const ordersSnapshot = await getDocs(collection(db, 'orders'));
+          const ordersData = ordersSnapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+          } as Order));
+          console.log('Orders fetched:', ordersData.length);
+          setOrders(ordersData);
+        } catch (orderError) {
+          console.error('Error fetching orders:', orderError);
+          setOrders([]);
+        }
 
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching admin data:', error);
         toast({
           title: 'Error loading data',
-          description: 'Failed to fetch admin data',
+          description: 'Failed to fetch admin data. Check console for details.',
           variant: 'destructive'
         });
       } finally {
@@ -86,8 +113,12 @@ const Admin = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    if (userData?.isAdmin) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
+  }, [userData]);
 
   const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
     try {
@@ -323,44 +354,6 @@ const Admin = () => {
         </CardContent>
       </Card>
 
-      {/* Cart Items Table */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="admin-stats-card-title">Recent Cart Items</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Item</th>
-                  <th>Price</th>
-                  <th>Quantity</th>
-                  <th>Total</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartItems.slice(0, 10).map((item) => {
-                  const user = users.find(u => u.uid === item.userId);
-                  return (
-                    <tr key={item.id}>
-                      <td className="text-breakfast-800">{user?.name || 'Unknown'}</td>
-                      <td className="text-breakfast-700">{item.name}</td>
-                      <td className="text-breakfast-700">UGX {item.price.toLocaleString()}</td>
-                      <td className="text-breakfast-700">{item.quantity}</td>
-                      <td className="text-breakfast-800 font-semibold">UGX {(item.price * item.quantity).toLocaleString()}</td>
-                      <td className="text-breakfast-600">{new Date(item.addedAt).toLocaleDateString()}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Users Table */}
       <Card>
         <CardHeader>
@@ -381,7 +374,6 @@ const Admin = () => {
               </thead>
               <tbody>
                 {users.map((user) => {
-                  const userOrders = ordersByUser[user.uid] || [];
                   const userOrderCount = orders.filter(order => order.userId === user.uid).length;
                   return (
                     <tr key={user.uid}>
@@ -414,6 +406,11 @@ const Admin = () => {
                 })}
               </tbody>
             </table>
+            {users.length === 0 && (
+              <div className="text-center py-8 text-breakfast-600">
+                No users found
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
