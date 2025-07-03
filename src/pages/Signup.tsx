@@ -51,11 +51,11 @@ const Signup = () => {
 
     } catch (error) {
       console.error('Signup error:', error);
-      toast({
-        title: 'Signup failed',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'destructive'
-      });
+      // toast({
+      //   title: 'Signup failed',
+      //   description: error instanceof Error ? error.message : 'Please try again.',
+      //   variant: 'destructive'
+      // });
     } finally {
       setLoading(false);
     }
