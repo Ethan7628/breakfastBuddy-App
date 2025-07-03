@@ -40,7 +40,7 @@ const Settings = () => {
                   {isAdmin ? (
                     <span style={{ color: '#dc2626', fontWeight: 600 }}>Administrator</span>
                   ) : (
-                    <span style={{ color: '#059669', fontWeight: 600 }}>Student</span>
+                    <span style={{ color: '#059669', fontWeight: 600 }}>User</span>
                   )}
                 </span>
               </div>
@@ -56,7 +56,7 @@ const Settings = () => {
               </div>
               {userData?.selectedBlock && (
                 <div className="settings-info-item">
-                  <span className="settings-info-label">Campus Location</span>
+                  <span className="settings-info-label">Our Location</span>
                   <span className="settings-info-value">{userData.selectedBlock.replace('-', ' ').toUpperCase()}</span>
                 </div>
               )}
