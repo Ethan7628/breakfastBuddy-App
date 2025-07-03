@@ -194,6 +194,16 @@
     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
+.settings-account-type-admin {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.settings-account-type-user {
+    color: #059669;
+    font-weight: 600;
+}
+
 @media (max-width: 768px) {
     .settings-title {
         font-size: 2rem;

@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -56,7 +55,7 @@ const Index = () => {
 
           <div className="index-features-grid">
             <Card className="index-feature-card">
-              <CardContent style={{ padding: '2rem' }}>
+              <CardContent className="index-feature-card-content">
                 <div className="index-feature-icon">🚀</div>
                 <h3 className="index-feature-title">Lightning Fast Delivery</h3>
                 <p className="index-feature-desc">
@@ -66,7 +65,7 @@ const Index = () => {
             </Card>
 
             <Card className="index-feature-card">
-              <CardContent style={{ padding: '2rem' }}>
+              <CardContent className="index-feature-card-content">
                 <div className="index-feature-icon">🍳</div>
                 <h3 className="index-feature-title">Premium Fresh Ingredients</h3>
                 <p className="index-feature-desc">
@@ -76,7 +75,7 @@ const Index = () => {
             </Card>
 
             <Card className="index-feature-card">
-              <CardContent style={{ padding: '2rem' }}>
+              <CardContent className="index-feature-card-content">
                 <div className="index-feature-icon">📱</div>
                 <h3 className="index-feature-title">Seamless Experience</h3>
                 <p className="index-feature-desc">

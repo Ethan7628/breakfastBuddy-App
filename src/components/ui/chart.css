@@ -1,0 +1,7 @@
+/* Chart legend color box class */
+.chart-legend-color-box {
+    height: 0.5rem;
+    width: 0.5rem;
+    border-radius: 2px;
+    display: inline-block;
+}
