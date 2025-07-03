@@ -1,12 +1,55 @@
 
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 import '../styles/Settings.css';
 
 const Settings = () => {
-  const { currentUser, userData } = useAuth();
+  const { currentUser, userData, updateUserBlock } = useAuth();
+  const [selectedBlock, setSelectedBlock] = useState(userData?.selectedBlock || '');
+  const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
   const adminEmail = "kusasirakwe.ethan.upti@gmail.com";
   const isAdmin = currentUser?.email === adminEmail;
+
+  const blocks = [
+    { id: 'block-a', name: 'Block A' },
+    { id: 'block-b', name: 'Block B' },
+    { id: 'block-c', name: 'Block C' },
+    { id: 'block-d', name: 'Block D' },
+    { id: 'block-e', name: 'Block E' },
+    { id: 'block-f', name: 'Block F' },
+  ];
+
+  const handleLocationUpdate = async () => {
+    if (!selectedBlock) {
+      toast({
+        title: 'Location Required',
+        description: 'Please select a location before saving.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsUpdatingLocation(true);
+    try {
+      await updateUserBlock(selectedBlock);
+      toast({
+        title: 'Location Updated',
+        description: `Your location has been set to ${blocks.find(b => b.id === selectedBlock)?.name || selectedBlock}`,
+      });
+    } catch (error) {
+      console.error('Error updating location:', error);
+      toast({
+        title: 'Update Failed',
+        description: 'Failed to update your location. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUpdatingLocation(false);
+    }
+  };
 
   return (
     <div className="settings-root">
@@ -56,10 +99,47 @@ const Settings = () => {
               </div>
               {userData?.selectedBlock && (
                 <div className="settings-info-item">
-                  <span className="settings-info-label">Our Location</span>
+                  <span className="settings-info-label">Current Location</span>
                   <span className="settings-info-value">{userData.selectedBlock.replace('-', ' ').toUpperCase()}</span>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Location Settings */}
+        <Card className="settings-card">
+          <CardHeader>
+            <CardTitle className="settings-card-title">
+              <span>📍</span>
+              Delivery Location
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="settings-form">
+              <div className="settings-form-group">
+                <label htmlFor="location">Select Your Block</label>
+                <select
+                  id="location"
+                  value={selectedBlock}
+                  onChange={(e) => setSelectedBlock(e.target.value)}
+                  className="w-full px-3 py-2 border border-breakfast-300 rounded-md focus:outline-none focus:ring-2 focus:ring-breakfast-500"
+                >
+                  <option value="">Choose your block...</option>
+                  {blocks.map((block) => (
+                    <option key={block.id} value={block.id}>
+                      {block.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                onClick={handleLocationUpdate}
+                disabled={isUpdatingLocation || !selectedBlock}
+                className="settings-btn w-full"
+              >
+                {isUpdatingLocation ? 'Updating...' : 'Update Location'}
+              </Button>
             </div>
           </CardContent>
         </Card>
