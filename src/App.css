@@ -43,3 +43,8 @@
 .read-the-docs {
   color: #888;
 }
+
+.install-pwa-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+}
