@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -40,6 +39,8 @@ const Dashboard = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userMessage, setUserMessage] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,6 +74,57 @@ const Dashboard = () => {
 
     fetchUserOrders();
   }, [currentUser]);
+
+  const handleSendMessage = async () => {
+    if (!userMessage.trim()) {
+      toast({
+        title: 'Please enter a message',
+        description: 'Write something before sending.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!currentUser) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please log in to send a message.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsSendingMessage(true);
+      console.log('Sending message to admin:', userMessage);
+      
+      const { addDoc, collection } = await import('firebase/firestore');
+      await addDoc(collection(db, 'adminMessages'), {
+        userId: currentUser.uid,
+        userName: userData?.name || 'Unknown User',
+        userEmail: currentUser.email,
+        message: userMessage,
+        createdAt: new Date().toISOString(),
+        isRead: false
+      });
+
+      toast({
+        title: 'Message sent successfully!',
+        description: 'Your message has been sent to the admin.',
+      });
+      
+      setUserMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Error sending message',
+        description: 'Please try again later.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
 
   const handleBlockUpdate = async () => {
     if (!selectedBlock) {
@@ -223,6 +275,40 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Message to Admin Section */}
+        <Card className="dashboard-card-elevated mb-6">
+          <CardHeader className="dashboard-card-header">
+            <CardTitle className="dashboard-card-title dashboard-card-title-lg">
+              <span>💬</span>
+              <span>Message Admin</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="dashboard-card-content dashboard-space-y-4">
+            <div>
+              <label className="dashboard-label">
+                Send a message to the admin:
+              </label>
+              <textarea
+                value={userMessage}
+                onChange={(e) => setUserMessage(e.target.value)}
+                placeholder="Type your message here..."
+                className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-breakfast-500 focus:border-transparent resize-vertical"
+                maxLength={500}
+              />
+              <div className="text-sm text-gray-500 mt-1">
+                {userMessage.length}/500 characters
+              </div>
+            </div>
+            <Button
+              onClick={handleSendMessage}
+              disabled={isSendingMessage || !userMessage.trim()}
+              className="dashboard-btn-primary"
+            >
+              {isSendingMessage ? 'Sending...' : 'Send Message'}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Quick Actions */}
         <Card className="dashboard-card-elevated">
