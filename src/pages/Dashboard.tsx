@@ -54,7 +54,7 @@ const Dashboard = () => {
   const [userMessage, setUserMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,71 +89,65 @@ const Dashboard = () => {
     fetchUserOrders();
   }, [currentUser]);
 
-  // Enhanced real-time chat messages listener with better error handling
+  // Simplified chat messages listener
   useEffect(() => {
     if (!currentUser) {
-      console.log('No current user, skipping chat listener setup');
+      console.log('No current user for chat');
       return;
     }
 
     console.log('Setting up chat listener for user:', currentUser.uid);
-    setChatError(null);
+    setChatLoading(true);
 
-    try {
-      const messagesQuery = query(
-        collection(db, 'chatMessages'),
-        where('userId', '==', currentUser.uid),
-        orderBy('createdAt', 'asc')
-      );
+    const messagesQuery = query(
+      collection(db, 'chatMessages'),
+      where('userId', '==', currentUser.uid),
+      orderBy('createdAt', 'asc')
+    );
 
-      const unsubscribe = onSnapshot(
-        messagesQuery,
-        (snapshot) => {
-          console.log('Chat messages snapshot received, docs:', snapshot.docs.length);
-          const messages = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              userId: data.userId || '',
-              userName: data.userName || 'Unknown User',
-              userEmail: data.userEmail || '',
-              message: data.message || '',
-              isFromAdmin: data.isFromAdmin || false,
-              createdAt: data.createdAt || new Date().toISOString(),
-              isRead: data.isRead || false
-            } as ChatMessage;
-          });
-          
-          console.log('Processed messages:', messages.length);
-          setChatMessages(messages);
-          setChatError(null);
-        },
-        (error) => {
-          console.error('Error in chat messages listener:', error);
-          setChatError('Failed to load chat messages. Please refresh the page.');
-          toast({
-            title: 'Chat Error',
-            description: 'Failed to load chat messages. Please refresh the page.',
-            variant: 'destructive',
-          });
-        }
-      );
+    const unsubscribe = onSnapshot(
+      messagesQuery,
+      (snapshot) => {
+        console.log('Chat messages received:', snapshot.docs.length);
+        const messages = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: data.userId || '',
+            userName: data.userName || 'Unknown User',
+            userEmail: data.userEmail || '',
+            message: data.message || '',
+            isFromAdmin: data.isFromAdmin || false,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: data.isRead || false
+          } as ChatMessage;
+        });
+        
+        setChatMessages(messages);
+        setChatLoading(false);
+      },
+      (error) => {
+        console.error('Chat listener error:', error);
+        setChatLoading(false);
+        toast({
+          title: 'Chat Error',
+          description: 'Failed to load messages. Please check your connection.',
+          variant: 'destructive',
+        });
+      }
+    );
 
-      return () => {
-        console.log('Cleaning up chat listener');
-        unsubscribe();
-      };
-    } catch (error) {
-      console.error('Error setting up chat listener:', error);
-      setChatError('Failed to initialize chat. Please refresh the page.');
-    }
-  }, [currentUser]);
+    return () => {
+      console.log('Cleaning up chat listener');
+      unsubscribe();
+    };
+  }, [currentUser?.uid]);
 
   const handleSendMessage = async () => {
     if (!userMessage.trim()) {
       toast({
-        title: 'Please enter a message',
-        description: 'Write something before sending.',
+        title: 'Message Required',
+        description: 'Please enter a message before sending.',
         variant: 'destructive',
       });
       return;
@@ -161,25 +155,19 @@ const Dashboard = () => {
 
     if (!currentUser) {
       toast({
-        title: 'Authentication required',
-        description: 'Please log in to send a message.',
+        title: 'Authentication Error',
+        description: 'Please log in to send messages.',
         variant: 'destructive',
       });
       return;
     }
 
+    setIsSendingMessage(true);
+    
     try {
-      setIsSendingMessage(true);
-      console.log('Sending chat message:', {
-        userId: currentUser.uid,
-        userName: userData?.name || 'Unknown User',
-        userEmail: currentUser.email,
-        message: userMessage
-      });
-      
       const messageData = {
         userId: currentUser.uid,
-        userName: userData?.name || 'Unknown User',
+        userName: userData?.name || 'User',
         userEmail: currentUser.email || '',
         message: userMessage.trim(),
         isFromAdmin: false,
@@ -187,20 +175,21 @@ const Dashboard = () => {
         isRead: false
       };
 
-      const docRef = await addDoc(collection(db, 'chatMessages'), messageData);
-      console.log('Message sent successfully with ID:', docRef.id);
-
-      toast({
-        title: 'Message sent!',
-        description: 'Your message has been sent to the admin.',
-      });
+      console.log('Sending message:', messageData);
+      
+      await addDoc(collection(db, 'chatMessages'), messageData);
       
       setUserMessage('');
+      toast({
+        title: 'Message Sent',
+        description: 'Your message has been sent successfully.',
+      });
+      
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
-        title: 'Error sending message',
-        description: 'Please try again later. Check your internet connection.',
+        title: 'Send Error',
+        description: 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -358,37 +347,27 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Enhanced Chat Section */}
+        {/* Improved Chat Section */}
         <Card className="dashboard-card-elevated mb-6">
           <CardHeader className="dashboard-card-header">
             <CardTitle className="dashboard-card-title dashboard-card-title-lg">
               <span>💬</span>
               <span>Chat with Admin</span>
-              {chatError && (
-                <span className="text-red-500 text-sm font-normal ml-2">
-                  ({chatError})
-                </span>
-              )}
+              {chatLoading && <span className="text-sm font-normal ml-2">(Loading...)</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="dashboard-card-content dashboard-space-y-4">
-            {/* Chat Messages */}
-            <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3">
-              {chatError ? (
-                <div className="text-center text-red-500 py-4">
-                  <p>{chatError}</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => window.location.reload()}
-                    className="mt-2"
-                  >
-                    Refresh Page
-                  </Button>
+            {/* Chat Messages Display */}
+            <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
+              {chatLoading ? (
+                <div className="text-center text-gray-500 py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-breakfast-500 mx-auto mb-2"></div>
+                  Loading messages...
                 </div>
               ) : chatMessages.length === 0 ? (
-                <div className="text-center text-gray-500 py-4">
-                  No messages yet. Start a conversation with the admin!
+                <div className="text-center text-gray-500 py-8">
+                  <p className="mb-2">👋 No messages yet!</p>
+                  <p className="text-sm">Start a conversation with the admin below.</p>
                 </div>
               ) : (
                 chatMessages.map((message) => (
@@ -397,18 +376,21 @@ const Dashboard = () => {
                     className={`flex ${message.isFromAdmin ? 'justify-start' : 'justify-end'}`}
                   >
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                      className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-sm ${
                         message.isFromAdmin
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-breakfast-500 text-white'
+                          ? 'bg-blue-500 text-white rounded-bl-sm'
+                          : 'bg-breakfast-500 text-white rounded-br-sm'
                       }`}
                     >
-                      <div className="text-sm font-medium mb-1">
-                        {message.isFromAdmin ? 'Admin' : 'You'}
+                      <div className="text-xs font-medium mb-1 opacity-90">
+                        {message.isFromAdmin ? '👨‍💼 Admin' : '👤 You'}
                       </div>
-                      <div className="text-sm">{message.message}</div>
-                      <div className="text-xs opacity-75 mt-1">
-                        {new Date(message.createdAt).toLocaleTimeString()}
+                      <div className="text-sm leading-relaxed">{message.message}</div>
+                      <div className="text-xs opacity-75 mt-2">
+                        {new Date(message.createdAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </div>
                     </div>
                   </div>
@@ -416,26 +398,49 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* Message Input */}
+            {/* Message Input Section */}
             <div className="space-y-3">
-              <Textarea
-                value={userMessage}
-                onChange={(e) => setUserMessage(e.target.value)}
-                placeholder="Type your message to the admin..."
-                className="min-h-[100px] resize-none"
-                maxLength={500}
-                disabled={!!chatError}
-              />
+              <div className="relative">
+                <Textarea
+                  value={userMessage}
+                  onChange={(e) => setUserMessage(e.target.value)}
+                  placeholder="Type your message to the admin..."
+                  className="min-h-[80px] resize-none pr-16"
+                  maxLength={500}
+                  disabled={isSendingMessage}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                  {userMessage.length}/500
+                </div>
+              </div>
+              
               <div className="flex justify-between items-center">
                 <div className="text-sm text-gray-500">
-                  {userMessage.length}/500 characters
+                  Press Enter to send, Shift+Enter for new line
                 </div>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={isSendingMessage || !userMessage.trim() || !!chatError}
+                  disabled={isSendingMessage || !userMessage.trim()}
                   className="dashboard-btn-primary"
+                  size="sm"
                 >
-                  {isSendingMessage ? 'Sending...' : 'Send Message'}
+                  {isSendingMessage ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <span>Send</span>
+                      <span className="ml-1">📤</span>
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
