@@ -473,7 +473,7 @@ const Admin = () => {
         </Card>
       </div>
 
-      {/* Improved Chat Management Section */}
+      {/* Chat Management Section with Fixed Colors */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Chat List */}
         <Card className="lg:col-span-1">
@@ -532,7 +532,7 @@ const Admin = () => {
           </CardContent>
         </Card>
 
-        {/* Enhanced Chat Window */}
+        {/* Enhanced Chat Window with Fixed Colors */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="admin-stats-card-title flex justify-between items-center">
@@ -561,7 +561,7 @@ const Admin = () => {
           <CardContent>
             {selectedChatData ? (
               <div className="space-y-4">
-                {/* Messages */}
+                {/* Messages with Fixed Colors */}
                 <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
                   {selectedChatData.messages.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">
@@ -576,8 +576,8 @@ const Admin = () => {
                         <div
                           className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-sm ${
                             message.isFromAdmin
-                              ? 'bg-blue-500 text-white rounded-bl-sm'
-                              : 'bg-breakfast-500 text-white rounded-br-sm'
+                              ? 'bg-yellow-500 text-white rounded-bl-sm'
+                              : 'bg-amber-800 text-white rounded-br-sm'
                           }`}
                         >
                           <div className="text-xs font-medium mb-1 opacity-90">

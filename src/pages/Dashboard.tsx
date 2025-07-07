@@ -89,7 +89,7 @@ const Dashboard = () => {
     fetchUserOrders();
   }, [currentUser]);
 
-  // Simplified chat messages listener
+  // Enhanced chat messages listener to receive admin replies
   useEffect(() => {
     if (!currentUser) {
       console.log('No current user for chat');
@@ -347,7 +347,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Improved Chat Section */}
+        {/* Improved Chat Section with Fixed Colors */}
         <Card className="dashboard-card-elevated mb-6">
           <CardHeader className="dashboard-card-header">
             <CardTitle className="dashboard-card-title dashboard-card-title-lg">
@@ -357,7 +357,7 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="dashboard-card-content dashboard-space-y-4">
-            {/* Chat Messages Display */}
+            {/* Chat Messages Display with Fixed Colors */}
             <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
               {chatLoading ? (
                 <div className="text-center text-gray-500 py-8">
@@ -378,8 +378,8 @@ const Dashboard = () => {
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-sm ${
                         message.isFromAdmin
-                          ? 'bg-blue-500 text-white rounded-bl-sm'
-                          : 'bg-breakfast-500 text-white rounded-br-sm'
+                          ? 'bg-yellow-500 text-white rounded-bl-sm'
+                          : 'bg-amber-800 text-white rounded-br-sm'
                       }`}
                     >
                       <div className="text-xs font-medium mb-1 opacity-90">
