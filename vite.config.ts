@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { VitePWA } from "vite-plugin-pwa"; // Add this import
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -12,13 +12,12 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
-    // Add VitePWA plugin (works in both dev and prod)
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
-        name: 'My Awesome App',
-        short_name: 'MyApp',
+        name: 'BreakFast Buddy',
+        short_name: 'B.B',
         description: 'My React PWA with Firebase',
         theme_color: '#ffffff',
         icons: [
@@ -51,4 +50,10 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Add these for Firebase hosting
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+  base: '/', // Ensures proper asset paths in production
 }));
