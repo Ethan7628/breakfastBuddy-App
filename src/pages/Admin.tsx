@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db, getAllCarts } from '@/lib/firebase';
@@ -45,11 +44,22 @@ interface Order {
   createdAt: string;
 }
 
+interface AdminMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+}
+
 const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adminMessages, setAdminMessages] = useState<AdminMessage[]>([]);
   const { userData } = useAuth();
 
   useEffect(() => {
@@ -82,6 +92,25 @@ const Admin = () => {
         } catch (cartError) {
           console.error('Error fetching cart items:', cartError);
           setCartItems([]);
+        }
+
+        // Fetch admin messages
+        try {
+          console.log('Fetching admin messages...');
+          const messagesSnapshot = await getDocs(collection(db, 'adminMessages'));
+          const messagesData = messagesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          } as AdminMessage));
+          
+          // Sort messages by creation date (newest first)
+          messagesData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          
+          console.log('Admin messages fetched:', messagesData.length);
+          setAdminMessages(messagesData);
+        } catch (messageError) {
+          console.error('Error fetching admin messages:', messageError);
+          setAdminMessages([]);
         }
 
         // Fetch all orders with improved error handling
@@ -182,6 +211,30 @@ const Admin = () => {
     }
   };
 
+  const markMessageAsRead = async (messageId: string) => {
+    try {
+      await updateDoc(doc(db, 'adminMessages', messageId), {
+        isRead: true
+      });
+
+      setAdminMessages(adminMessages.map(message =>
+        message.id === messageId ? { ...message, isRead: true } : message
+      ));
+
+      toast({
+        title: 'Message marked as read',
+        description: 'Message status updated successfully.',
+      });
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update message status',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (!userData?.isAdmin) {
     return (
       <div className="admin-access-denied">
@@ -212,6 +265,7 @@ const Admin = () => {
   const adminUsers = users.filter(u => u.isAdmin).length;
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const unreadMessages = adminMessages.filter(m => !m.isRead).length;
 
   return (
     <div className="admin-root">
@@ -261,7 +315,87 @@ const Admin = () => {
             <p className="admin-stats-card-desc">System administrators</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="admin-stats-card-title">Messages</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="admin-stats-card-value">{unreadMessages}</div>
+            <p className="admin-stats-card-desc">Unread messages</p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Admin Messages */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="admin-stats-card-title">User Messages ({adminMessages.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Message</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminMessages.map((message) => (
+                  <tr key={message.id} className={!message.isRead ? 'bg-yellow-50' : ''}>
+                    <td className="text-breakfast-800">
+                      <div>
+                        <div className="font-semibold">{message.userName}</div>
+                        <div className="text-xs text-breakfast-600">{message.userEmail}</div>
+                      </div>
+                    </td>
+                    <td className="text-breakfast-700">
+                      <div className="max-w-xs">
+                        <p className="text-sm line-clamp-3">{message.message}</p>
+                      </div>
+                    </td>
+                    <td className="text-breakfast-600 text-xs">
+                      {new Date(message.createdAt).toLocaleDateString()}
+                      <br />
+                      {new Date(message.createdAt).toLocaleTimeString()}
+                    </td>
+                    <td>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        message.isRead 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {message.isRead ? 'Read' : 'Unread'}
+                      </span>
+                    </td>
+                    <td>
+                      {!message.isRead && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => markMessageAsRead(message.id)}
+                          className="text-xs"
+                        >
+                          Mark as Read
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {adminMessages.length === 0 && (
+              <div className="text-center py-8 text-breakfast-600">
+                No messages found
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* All Orders Table */}
       <Card className="mb-6">
