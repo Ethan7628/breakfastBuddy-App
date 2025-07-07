@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import '../styles/Dashboard.css';
 
@@ -25,6 +27,17 @@ interface Order {
   createdAt: string;
 }
 
+interface ChatMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  message: string;
+  isFromAdmin: boolean;
+  createdAt: string;
+  isRead: boolean;
+}
+
 const blocks = [
   { id: 'block-a', name: 'Block A ' },
   { id: 'block-b', name: 'Block B ' },
@@ -41,6 +54,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [userMessage, setUserMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,6 +89,27 @@ const Dashboard = () => {
     fetchUserOrders();
   }, [currentUser]);
 
+  // Real-time chat messages listener
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const messagesQuery = query(
+      collection(db, 'chatMessages'),
+      where('userId', '==', currentUser.uid),
+      orderBy('createdAt', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      const messages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as ChatMessage));
+      setChatMessages(messages);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
   const handleSendMessage = async () => {
     if (!userMessage.trim()) {
       toast({
@@ -96,20 +131,20 @@ const Dashboard = () => {
 
     try {
       setIsSendingMessage(true);
-      console.log('Sending message to admin:', userMessage);
+      console.log('Sending chat message:', userMessage);
       
-      const { addDoc, collection } = await import('firebase/firestore');
-      await addDoc(collection(db, 'adminMessages'), {
+      await addDoc(collection(db, 'chatMessages'), {
         userId: currentUser.uid,
         userName: userData?.name || 'Unknown User',
         userEmail: currentUser.email,
         message: userMessage,
+        isFromAdmin: false,
         createdAt: new Date().toISOString(),
         isRead: false
       });
 
       toast({
-        title: 'Message sent successfully!',
+        title: 'Message sent!',
         description: 'Your message has been sent to the admin.',
       });
       
@@ -276,37 +311,69 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Message to Admin Section */}
+        {/* Chat Section */}
         <Card className="dashboard-card-elevated mb-6">
           <CardHeader className="dashboard-card-header">
             <CardTitle className="dashboard-card-title dashboard-card-title-lg">
               <span>💬</span>
-              <span>Message Admin</span>
+              <span>Chat with Admin</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="dashboard-card-content dashboard-space-y-4">
-            <div>
-              <label className="dashboard-label">
-                Send a message to the admin:
-              </label>
-              <textarea
+            {/* Chat Messages */}
+            <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3">
+              {chatMessages.length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  No messages yet. Start a conversation with the admin!
+                </div>
+              ) : (
+                chatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.isFromAdmin ? 'justify-start' : 'justify-end'}`}
+                  >
+                    <div
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        message.isFromAdmin
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-breakfast-500 text-white'
+                      }`}
+                    >
+                      <div className="text-sm font-medium mb-1">
+                        {message.isFromAdmin ? 'Admin' : 'You'}
+                      </div>
+                      <div className="text-sm">{message.message}</div>
+                      <div className="text-xs opacity-75 mt-1">
+                        {new Date(message.createdAt).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div className="space-y-3">
+              <Textarea
                 value={userMessage}
                 onChange={(e) => setUserMessage(e.target.value)}
-                placeholder="Type your message here..."
-                className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-breakfast-500 focus:border-transparent resize-vertical"
+                placeholder="Type your message to the admin..."
+                className="min-h-[100px] resize-none"
                 maxLength={500}
               />
-              <div className="text-sm text-gray-500 mt-1">
-                {userMessage.length}/500 characters
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-500">
+                  {userMessage.length}/500 characters
+                </div>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={isSendingMessage || !userMessage.trim()}
+                  className="dashboard-btn-primary"
+                >
+                  {isSendingMessage ? 'Sending...' : 'Send Message'}
+                </Button>
               </div>
             </div>
-            <Button
-              onClick={handleSendMessage}
-              disabled={isSendingMessage || !userMessage.trim()}
-              className="dashboard-btn-primary"
-            >
-              {isSendingMessage ? 'Sending...' : 'Send Message'}
-            </Button>
           </CardContent>
         </Card>
 
