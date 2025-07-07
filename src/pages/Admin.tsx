@@ -74,7 +74,7 @@ const Admin = () => {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
   const { userData } = useAuth();
 
   useEffect(() => {
@@ -156,118 +156,108 @@ const Admin = () => {
     }
   }, [userData]);
 
-  // Enhanced real-time chat messages listener with better error handling
+  // Simplified admin chat listener
   useEffect(() => {
     if (!userData?.isAdmin) {
-      console.log('User is not admin, skipping chat listener setup');
+      console.log('User is not admin, skipping chat setup');
       return;
     }
 
     console.log('Setting up admin chat listener');
-    setChatError(null);
+    setChatLoading(true);
 
-    try {
-      const messagesQuery = query(
-        collection(db, 'chatMessages'),
-        orderBy('createdAt', 'asc')
-      );
+    const messagesQuery = query(
+      collection(db, 'chatMessages'),
+      orderBy('createdAt', 'asc')
+    );
 
-      const unsubscribe = onSnapshot(
-        messagesQuery,
-        (snapshot) => {
-          console.log('Admin chat messages snapshot received, docs:', snapshot.docs.length);
+    const unsubscribe = onSnapshot(
+      messagesQuery,
+      (snapshot) => {
+        console.log('Admin received chat messages:', snapshot.docs.length);
+        
+        const messages = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: data.userId || '',
+            userName: data.userName || 'Unknown User',
+            userEmail: data.userEmail || '',
+            message: data.message || '',
+            isFromAdmin: data.isFromAdmin || false,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: data.isRead || false
+          } as ChatMessage;
+        });
+
+        // Group messages by user
+        const chatsByUser: { [userId: string]: UserChat } = {};
+        
+        messages.forEach(message => {
+          if (!chatsByUser[message.userId]) {
+            chatsByUser[message.userId] = {
+              userId: message.userId,
+              userName: message.userName,
+              userEmail: message.userEmail,
+              messages: [],
+              unreadCount: 0,
+              lastMessageTime: message.createdAt
+            };
+          }
           
-          const messages = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              userId: data.userId || '',
-              userName: data.userName || 'Unknown User',
-              userEmail: data.userEmail || '',
-              message: data.message || '',
-              isFromAdmin: data.isFromAdmin || false,
-              createdAt: data.createdAt || new Date().toISOString(),
-              isRead: data.isRead || false
-            } as ChatMessage;
-          });
-
-          // Group messages by user
-          const chatsByUser: { [userId: string]: UserChat } = {};
+          chatsByUser[message.userId].messages.push(message);
           
-          messages.forEach(message => {
-            if (!chatsByUser[message.userId]) {
-              chatsByUser[message.userId] = {
-                userId: message.userId,
-                userName: message.userName,
-                userEmail: message.userEmail,
-                messages: [],
-                unreadCount: 0,
-                lastMessageTime: message.createdAt
-              };
-            }
-            
-            chatsByUser[message.userId].messages.push(message);
-            
-            // Update last message time
-            if (message.createdAt > chatsByUser[message.userId].lastMessageTime) {
-              chatsByUser[message.userId].lastMessageTime = message.createdAt;
-            }
-            
-            // Count unread messages from users (not from admin)
-            if (!message.isFromAdmin && !message.isRead) {
-              chatsByUser[message.userId].unreadCount++;
-            }
-          });
+          // Update last message time
+          if (message.createdAt > chatsByUser[message.userId].lastMessageTime) {
+            chatsByUser[message.userId].lastMessageTime = message.createdAt;
+          }
+          
+          // Count unread messages from users (not from admin)
+          if (!message.isFromAdmin && !message.isRead) {
+            chatsByUser[message.userId].unreadCount++;
+          }
+        });
 
-          // Sort chats by latest message time
-          const sortedChats = Object.values(chatsByUser).sort((a, b) => {
-            return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
-          });
+        // Sort chats by latest message time
+        const sortedChats = Object.values(chatsByUser).sort((a, b) => {
+          return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+        });
 
-          console.log('Processed admin chats:', sortedChats.length);
-          setUserChats(sortedChats);
-          setChatError(null);
-        },
-        (error) => {
-          console.error('Error in admin chat messages listener:', error);
-          setChatError('Failed to load chat messages. Please refresh the page.');
-          toast({
-            title: 'Chat Error',
-            description: 'Failed to load chat messages. Please refresh the page.',
-            variant: 'destructive'
-          });
-        }
-      );
+        console.log('Processed admin chats:', sortedChats.length);
+        setUserChats(sortedChats);
+        setChatLoading(false);
+      },
+      (error) => {
+        console.error('Admin chat listener error:', error);
+        setChatLoading(false);
+        toast({
+          title: 'Chat Error',
+          description: 'Failed to load chat messages.',
+          variant: 'destructive'
+        });
+      }
+    );
 
-      return () => {
-        console.log('Cleaning up admin chat listener');
-        unsubscribe();
-      };
-    } catch (error) {
-      console.error('Error setting up admin chat listener:', error);
-      setChatError('Failed to initialize chat system. Please refresh the page.');
-    }
+    return () => {
+      console.log('Cleaning up admin chat listener');
+      unsubscribe();
+    };
   }, [userData?.isAdmin]);
 
+  // Simplified reply sending
   const sendReplyToUser = async (userId: string, userName: string, userEmail: string) => {
     if (!replyMessage.trim()) {
       toast({
-        title: 'Please enter a message',
-        description: 'Write something before sending.',
+        title: 'Message Required',
+        description: 'Please enter a message before sending.',
         variant: 'destructive',
       });
       return;
     }
 
+    setIsSendingReply(true);
+    
     try {
-      setIsSendingReply(true);
-      console.log('Admin sending reply to user:', {
-        userId,
-        userName,
-        userEmail,
-        message: replyMessage
-      });
-      
       const messageData = {
         userId: userId,
         userName: userName,
@@ -278,11 +268,12 @@ const Admin = () => {
         isRead: false
       };
 
-      const docRef = await addDoc(collection(db, 'chatMessages'), messageData);
-      console.log('Admin reply sent successfully with ID:', docRef.id);
+      console.log('Admin sending reply:', messageData);
+      
+      await addDoc(collection(db, 'chatMessages'), messageData);
 
       toast({
-        title: 'Reply sent!',
+        title: 'Reply Sent',
         description: `Your message has been sent to ${userName}.`,
       });
       
@@ -290,8 +281,8 @@ const Admin = () => {
     } catch (error) {
       console.error('Error sending admin reply:', error);
       toast({
-        title: 'Error sending reply',
-        description: 'Please try again later. Check your internet connection.',
+        title: 'Send Error',
+        description: 'Failed to send reply. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -303,7 +294,6 @@ const Admin = () => {
     try {
       console.log('Marking messages as read for user:', userId);
       
-      // Find all unread messages from this user
       const messagesQuery = query(
         collection(db, 'chatMessages'),
         where('userId', '==', userId),
@@ -312,33 +302,30 @@ const Admin = () => {
       );
 
       const snapshot = await getDocs(messagesQuery);
-      console.log('Found unread messages to mark as read:', snapshot.docs.length);
       
       if (snapshot.docs.length === 0) {
         toast({
-          title: 'No unread messages',
+          title: 'No Unread Messages',
           description: 'All messages from this user are already read.',
         });
         return;
       }
 
-      // Update each unread message
       const updatePromises = snapshot.docs.map(messageDoc => 
         updateDoc(doc(db, 'chatMessages', messageDoc.id), { isRead: true })
       );
 
       await Promise.all(updatePromises);
-      console.log('Successfully marked messages as read');
 
       toast({
-        title: 'Messages marked as read',
+        title: 'Messages Marked as Read',
         description: `Marked ${snapshot.docs.length} messages as read.`,
       });
     } catch (error) {
       console.error('Error marking messages as read:', error);
       toast({
         title: 'Error',
-        description: 'Failed to mark messages as read. Please try again.',
+        description: 'Failed to mark messages as read.',
         variant: 'destructive'
       });
     }
@@ -486,67 +473,60 @@ const Admin = () => {
         </Card>
       </div>
 
-      {/* Enhanced Chat Management Section */}
+      {/* Improved Chat Management Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Chat List */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="admin-stats-card-title">
               User Chats ({userChats.length})
-              {chatError && (
-                <span className="text-red-500 text-sm font-normal block mt-1">
-                  {chatError}
-                </span>
-              )}
+              {chatLoading && <span className="text-sm font-normal ml-2">(Loading...)</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="max-h-96 overflow-y-auto">
-              {chatError ? (
-                <div className="p-4 text-center text-red-500">
-                  <p>{chatError}</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => window.location.reload()}
-                    className="mt-2"
-                  >
-                    Refresh Page
-                  </Button>
+              {chatLoading ? (
+                <div className="p-4 text-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-breakfast-500 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-500">Loading chats...</p>
                 </div>
-              ) : userChats.map((chat) => (
-                <div
-                  key={chat.userId}
-                  className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedChat === chat.userId ? 'bg-blue-50 border-blue-200' : ''
-                  }`}
-                  onClick={() => setSelectedChat(chat.userId)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="font-semibold text-breakfast-800">{chat.userName}</div>
-                      <div className="text-xs text-breakfast-600">{chat.userEmail}</div>
-                      {chat.messages.length > 0 && (
-                        <div className="text-sm text-gray-600 mt-1 truncate">
-                          {chat.messages[chat.messages.length - 1].message}
-                        </div>
-                      )}
-                      <div className="text-xs text-gray-400 mt-1">
-                        {new Date(chat.lastMessageTime).toLocaleString()}
-                      </div>
-                    </div>
-                    {chat.unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full flex-shrink-0">
-                        {chat.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {userChats.length === 0 && !chatError && (
+              ) : userChats.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
-                  No conversations yet
+                  <p>No conversations yet</p>
                 </div>
+              ) : (
+                userChats.map((chat) => (
+                  <div
+                    key={chat.userId}
+                    className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedChat === chat.userId ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                    onClick={() => setSelectedChat(chat.userId)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="font-semibold text-breakfast-800 flex items-center">
+                          <span className="mr-2">👤</span>
+                          {chat.userName}
+                        </div>
+                        <div className="text-xs text-breakfast-600">{chat.userEmail}</div>
+                        {chat.messages.length > 0 && (
+                          <div className="text-sm text-gray-600 mt-1 truncate">
+                            {chat.messages[chat.messages.length - 1].message}
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(chat.lastMessageTime).toLocaleString()}
+                        </div>
+                      </div>
+                      {chat.unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full flex-shrink-0">
+                          {chat.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </CardContent>
@@ -557,7 +537,14 @@ const Admin = () => {
           <CardHeader>
             <CardTitle className="admin-stats-card-title flex justify-between items-center">
               <span>
-                {selectedChatData ? `Chat with ${selectedChatData.userName}` : 'Select a chat'}
+                {selectedChatData ? (
+                  <span className="flex items-center">
+                    <span className="mr-2">💬</span>
+                    Chat with {selectedChatData.userName}
+                  </span>
+                ) : (
+                  'Select a chat'
+                )}
               </span>
               {selectedChatData && selectedChatData.unreadCount > 0 && (
                 <Button
@@ -575,10 +562,10 @@ const Admin = () => {
             {selectedChatData ? (
               <div className="space-y-4">
                 {/* Messages */}
-                <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
                   {selectedChatData.messages.length === 0 ? (
-                    <div className="text-center text-gray-500 py-4">
-                      No messages in this conversation yet
+                    <div className="text-center text-gray-500 py-8">
+                      <p>No messages in this conversation yet</p>
                     </div>
                   ) : (
                     selectedChatData.messages.map((message) => (
@@ -587,18 +574,23 @@ const Admin = () => {
                         className={`flex ${message.isFromAdmin ? 'justify-start' : 'justify-end'}`}
                       >
                         <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-sm ${
                             message.isFromAdmin
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-breakfast-500 text-white'
+                              ? 'bg-blue-500 text-white rounded-bl-sm'
+                              : 'bg-breakfast-500 text-white rounded-br-sm'
                           }`}
                         >
-                          <div className="text-sm font-medium mb-1">
-                            {message.isFromAdmin ? 'Admin (You)' : selectedChatData.userName}
+                          <div className="text-xs font-medium mb-1 opacity-90">
+                            {message.isFromAdmin ? '👨‍💼 Admin (You)' : `👤 ${selectedChatData.userName}`}
                           </div>
-                          <div className="text-sm">{message.message}</div>
-                          <div className="text-xs opacity-75 mt-1 flex justify-between">
-                            <span>{new Date(message.createdAt).toLocaleTimeString()}</span>
+                          <div className="text-sm leading-relaxed">{message.message}</div>
+                          <div className="text-xs opacity-75 mt-2 flex justify-between">
+                            <span>
+                              {new Date(message.createdAt).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
                             {!message.isFromAdmin && (
                               <span>{message.isRead ? '✓✓' : '✓'}</span>
                             )}
@@ -611,17 +603,33 @@ const Admin = () => {
 
                 {/* Reply Input */}
                 <div className="space-y-3">
-                  <Textarea
-                    value={replyMessage}
-                    onChange={(e) => setReplyMessage(e.target.value)}
-                    placeholder={`Reply to ${selectedChatData.userName}...`}
-                    className="min-h-[100px] resize-none"
-                    maxLength={500}
-                    disabled={!!chatError}
-                  />
+                  <div className="relative">
+                    <Textarea
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      placeholder={`Reply to ${selectedChatData.userName}...`}
+                      className="min-h-[80px] resize-none pr-16"
+                      maxLength={500}
+                      disabled={isSendingReply}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          sendReplyToUser(
+                            selectedChatData.userId,
+                            selectedChatData.userName,
+                            selectedChatData.userEmail
+                          );
+                        }
+                      }}
+                    />
+                    <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                      {replyMessage.length}/500
+                    </div>
+                  </div>
+                  
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-gray-500">
-                      {replyMessage.length}/500 characters
+                      Press Enter to send, Shift+Enter for new line
                     </div>
                     <Button
                       onClick={() => sendReplyToUser(
@@ -629,17 +637,30 @@ const Admin = () => {
                         selectedChatData.userName,
                         selectedChatData.userEmail
                       )}
-                      disabled={isSendingReply || !replyMessage.trim() || !!chatError}
+                      disabled={isSendingReply || !replyMessage.trim()}
                       className="bg-blue-600 hover:bg-blue-700"
+                      size="sm"
                     >
-                      {isSendingReply ? 'Sending...' : 'Send Reply'}
+                      {isSendingReply ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <span>Send Reply</span>
+                          <span className="ml-1">📤</span>
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                Select a conversation to start chatting
+              <div className="text-center py-12 text-gray-500">
+                <div className="text-4xl mb-4">💬</div>
+                <p className="text-lg">Select a conversation to start chatting</p>
+                <p className="text-sm mt-2">Choose a user from the chat list to view their messages</p>
               </div>
             )}
           </CardContent>
