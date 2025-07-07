@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -55,6 +54,7 @@ const Dashboard = () => {
   const [userMessage, setUserMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatError, setChatError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,25 +89,64 @@ const Dashboard = () => {
     fetchUserOrders();
   }, [currentUser]);
 
-  // Real-time chat messages listener
+  // Enhanced real-time chat messages listener with better error handling
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('No current user, skipping chat listener setup');
+      return;
+    }
 
-    const messagesQuery = query(
-      collection(db, 'chatMessages'),
-      where('userId', '==', currentUser.uid),
-      orderBy('createdAt', 'asc')
-    );
+    console.log('Setting up chat listener for user:', currentUser.uid);
+    setChatError(null);
 
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const messages = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as ChatMessage));
-      setChatMessages(messages);
-    });
+    try {
+      const messagesQuery = query(
+        collection(db, 'chatMessages'),
+        where('userId', '==', currentUser.uid),
+        orderBy('createdAt', 'asc')
+      );
 
-    return () => unsubscribe();
+      const unsubscribe = onSnapshot(
+        messagesQuery,
+        (snapshot) => {
+          console.log('Chat messages snapshot received, docs:', snapshot.docs.length);
+          const messages = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              userId: data.userId || '',
+              userName: data.userName || 'Unknown User',
+              userEmail: data.userEmail || '',
+              message: data.message || '',
+              isFromAdmin: data.isFromAdmin || false,
+              createdAt: data.createdAt || new Date().toISOString(),
+              isRead: data.isRead || false
+            } as ChatMessage;
+          });
+          
+          console.log('Processed messages:', messages.length);
+          setChatMessages(messages);
+          setChatError(null);
+        },
+        (error) => {
+          console.error('Error in chat messages listener:', error);
+          setChatError('Failed to load chat messages. Please refresh the page.');
+          toast({
+            title: 'Chat Error',
+            description: 'Failed to load chat messages. Please refresh the page.',
+            variant: 'destructive',
+          });
+        }
+      );
+
+      return () => {
+        console.log('Cleaning up chat listener');
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error('Error setting up chat listener:', error);
+      setChatError('Failed to initialize chat. Please refresh the page.');
+    }
   }, [currentUser]);
 
   const handleSendMessage = async () => {
@@ -131,17 +170,25 @@ const Dashboard = () => {
 
     try {
       setIsSendingMessage(true);
-      console.log('Sending chat message:', userMessage);
-      
-      await addDoc(collection(db, 'chatMessages'), {
+      console.log('Sending chat message:', {
         userId: currentUser.uid,
         userName: userData?.name || 'Unknown User',
         userEmail: currentUser.email,
-        message: userMessage,
+        message: userMessage
+      });
+      
+      const messageData = {
+        userId: currentUser.uid,
+        userName: userData?.name || 'Unknown User',
+        userEmail: currentUser.email || '',
+        message: userMessage.trim(),
         isFromAdmin: false,
         createdAt: new Date().toISOString(),
         isRead: false
-      });
+      };
+
+      const docRef = await addDoc(collection(db, 'chatMessages'), messageData);
+      console.log('Message sent successfully with ID:', docRef.id);
 
       toast({
         title: 'Message sent!',
@@ -153,7 +200,7 @@ const Dashboard = () => {
       console.error('Error sending message:', error);
       toast({
         title: 'Error sending message',
-        description: 'Please try again later.',
+        description: 'Please try again later. Check your internet connection.',
         variant: 'destructive',
       });
     } finally {
@@ -311,18 +358,35 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Chat Section */}
+        {/* Enhanced Chat Section */}
         <Card className="dashboard-card-elevated mb-6">
           <CardHeader className="dashboard-card-header">
             <CardTitle className="dashboard-card-title dashboard-card-title-lg">
               <span>💬</span>
               <span>Chat with Admin</span>
+              {chatError && (
+                <span className="text-red-500 text-sm font-normal ml-2">
+                  ({chatError})
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="dashboard-card-content dashboard-space-y-4">
             {/* Chat Messages */}
             <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3">
-              {chatMessages.length === 0 ? (
+              {chatError ? (
+                <div className="text-center text-red-500 py-4">
+                  <p>{chatError}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => window.location.reload()}
+                    className="mt-2"
+                  >
+                    Refresh Page
+                  </Button>
+                </div>
+              ) : chatMessages.length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
                   No messages yet. Start a conversation with the admin!
                 </div>
@@ -360,6 +424,7 @@ const Dashboard = () => {
                 placeholder="Type your message to the admin..."
                 className="min-h-[100px] resize-none"
                 maxLength={500}
+                disabled={!!chatError}
               />
               <div className="flex justify-between items-center">
                 <div className="text-sm text-gray-500">
@@ -367,7 +432,7 @@ const Dashboard = () => {
                 </div>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={isSendingMessage || !userMessage.trim()}
+                  disabled={isSendingMessage || !userMessage.trim() || !!chatError}
                   className="dashboard-btn-primary"
                 >
                   {isSendingMessage ? 'Sending...' : 'Send Message'}
