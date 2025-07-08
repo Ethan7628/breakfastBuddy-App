@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -10,14 +10,59 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Menu, X, User, LogOut, Settings, Home } from 'lucide-react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import logo from "../images/logo.png"
 import '../styles/Header.css';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [adminUnreadCount, setAdminUnreadCount] = useState(0);
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Listen for unread messages for regular users
+  useEffect(() => {
+    if (!currentUser || userData?.isAdmin) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const messagesQuery = query(
+      collection(db, 'chatMessages'),
+      where('userId', '==', currentUser.uid),
+      where('isFromAdmin', '==', true),
+      where('isRead', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      setUnreadCount(snapshot.docs.length);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, userData?.isAdmin]);
+
+  // Listen for unread messages for admin users
+  useEffect(() => {
+    if (!currentUser || !userData?.isAdmin) {
+      setAdminUnreadCount(0);
+      return;
+    }
+
+    const messagesQuery = query(
+      collection(db, 'chatMessages'),
+      where('isFromAdmin', '==', false),
+      where('isRead', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      setAdminUnreadCount(snapshot.docs.length);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, userData?.isAdmin]);
 
   const handleLogout = async () => {
     try {
@@ -38,8 +83,18 @@ const Header = () => {
     { to: '/', label: 'Home', icon: Home },
     { to: '/menu', label: 'Menu', icon: null },
     ...(currentUser ? [{ to: '/orders', label: 'Orders', icon: null }] : []),
-    ...(userData?.isAdmin ? [{ to: '/admin', label: 'Admin', icon: null }] : []),
-    ...(currentUser && !userData?.isAdmin ? [{ to: '/dashboard', label: 'Dashboard', icon: null }] : []),
+    ...(userData?.isAdmin ? [{ 
+      to: '/admin', 
+      label: 'Admin', 
+      icon: null,
+      badge: adminUnreadCount > 0 ? adminUnreadCount : null 
+    }] : []),
+    ...(currentUser && !userData?.isAdmin ? [{ 
+      to: '/dashboard', 
+      label: 'Dashboard', 
+      icon: null,
+      badge: unreadCount > 0 ? unreadCount : null 
+    }] : []),
   ];
 
   return (
@@ -59,9 +114,14 @@ const Header = () => {
             <Link
               key={link.to}
               to={link.to}
-              className={`header-nav-link${isActive(link.to) ? ' active' : ''}`}
+              className={`header-nav-link${isActive(link.to) ? ' active' : ''} relative`}
             >
               {link.label}
+              {link.badge && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {link.badge}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
@@ -147,9 +207,14 @@ const Header = () => {
                 key={link.to}
                 to={link.to}
                 onClick={() => setIsMenuOpen(false)}
-                className={`header-mobile-menu-link${isActive(link.to) ? ' active' : ''}`}
+                className={`header-mobile-menu-link${isActive(link.to) ? ' active' : ''} relative`}
               >
                 {link.label}
+                {link.badge && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             ))}
 
