@@ -157,7 +157,7 @@ const Admin = () => {
     }
   }, [userData]);
 
-  // Simplified admin chat listener
+  // Fixed admin chat listener
   useEffect(() => {
     if (!userData?.isAdmin) {
       console.log('User is not admin, skipping chat setup');
@@ -167,6 +167,8 @@ const Admin = () => {
     console.log('Setting up admin chat listener');
     setChatLoading(true);
     setChatError(null);
+
+    let unsubscribeFn: (() => void) | null = null;
 
     const setupChatListener = async () => {
       try {
@@ -237,7 +239,7 @@ const Admin = () => {
           orderBy('createdAt', 'asc')
         );
 
-        const unsubscribe = onSnapshot(
+        unsubscribeFn = onSnapshot(
           messagesQuery,
           (snapshot) => {
             console.log('Real-time admin chat update:', snapshot.docs.length);
@@ -294,8 +296,6 @@ const Admin = () => {
           }
         );
 
-        return unsubscribe;
-
       } catch (error) {
         console.error('Error fetching admin chat messages:', error);
         setChatError('Failed to load chat messages. Please check your connection.');
@@ -303,12 +303,12 @@ const Admin = () => {
       }
     };
 
-    const unsubscribe = setupChatListener();
+    setupChatListener();
 
     return () => {
       console.log('Cleaning up admin chat listener');
-      if (unsubscribe && typeof unsubscribe === 'function') {
-        unsubscribe();
+      if (unsubscribeFn) {
+        unsubscribeFn();
       }
     };
   }, [userData?.isAdmin]);
