@@ -56,6 +56,7 @@ const Dashboard = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [chatSectionOpen, setChatSectionOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -163,6 +164,19 @@ const Dashboard = () => {
             });
             
             setChatMessages(updatedMessages);
+
+            // Show notification for new admin messages
+            const newAdminMessages = updatedMessages.filter(msg => 
+              msg.isFromAdmin && !msg.isRead && 
+              new Date(msg.createdAt).getTime() > Date.now() - 5000 // Last 5 seconds
+            );
+
+            if (newAdminMessages.length > 0) {
+              toast({
+                title: 'New message from Admin',
+                description: `You have ${newAdminMessages.length} new message(s)`,
+              });
+            }
           },
           (error) => {
             console.error('Real-time chat listener error:', error);
@@ -216,6 +230,33 @@ const Dashboard = () => {
       }
     };
   }, [currentUser?.uid]);
+
+  useEffect(() => {
+    if (chatSectionOpen && currentUser) {
+      const markAdminMessagesAsRead = async () => {
+        try {
+          const unreadAdminMessages = chatMessages.filter(msg => 
+            msg.isFromAdmin && !msg.isRead
+          );
+
+          if (unreadAdminMessages.length > 0) {
+            const { updateDoc, doc } = await import('firebase/firestore');
+            
+            const updatePromises = unreadAdminMessages.map(msg =>
+              updateDoc(doc(db, 'chatMessages', msg.id), { isRead: true })
+            );
+
+            await Promise.all(updatePromises);
+            console.log(`Marked ${unreadAdminMessages.length} admin messages as read`);
+          }
+        } catch (error) {
+          console.error('Error marking admin messages as read:', error);
+        }
+      };
+
+      markAdminMessagesAsRead();
+    }
+  }, [chatSectionOpen, chatMessages, currentUser]);
 
   const handleSendMessage = async () => {
     if (!userMessage.trim()) {
@@ -426,119 +467,134 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Improved Chat Section with Better Error Handling */}
+        {/* Improved Chat Section with notification badge */}
         <Card className="dashboard-card-elevated mb-6">
-          <CardHeader className="dashboard-card-header">
-            <CardTitle className="dashboard-card-title dashboard-card-title-lg">
-              <span>💬</span>
-              <span>Chat with Admin</span>
-              {chatLoading && <span className="text-sm font-normal ml-2">(Loading...)</span>}
+          <CardHeader 
+            className="dashboard-card-header cursor-pointer"
+            onClick={() => setChatSectionOpen(!chatSectionOpen)}
+          >
+            <CardTitle className="dashboard-card-title dashboard-card-title-lg flex items-center justify-between">
+              <div className="flex items-center">
+                <span>💬</span>
+                <span>Chat with Admin</span>
+                {chatLoading && <span className="text-sm font-normal ml-2">(Loading...)</span>}
+                {chatMessages.filter(msg => msg.isFromAdmin && !msg.isRead).length > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                    {chatMessages.filter(msg => msg.isFromAdmin && !msg.isRead).length} new
+                  </span>
+                )}
+              </div>
+              <span className="text-sm">
+                {chatSectionOpen ? '▼' : '▶'}
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="dashboard-card-content dashboard-space-y-4">
-            {/* Error Display */}
-            {chatError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                <div className="text-red-600 font-medium mb-2">⚠️ Connection Issue</div>
-                <div className="text-red-700 text-sm mb-3">{chatError}</div>
-                <Button 
-                  size="sm" 
-                  onClick={retryChatConnection}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  Retry Connection
-                </Button>
-              </div>
-            )}
-
-            {/* Chat Messages Display */}
-            <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
-              {chatLoading && !chatError ? (
-                <div className="text-center text-gray-500 py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-breakfast-500 mx-auto mb-2"></div>
-                  Loading chat messages...
-                </div>
-              ) : chatMessages.length === 0 && !chatError ? (
-                <div className="text-center text-gray-500 py-8">
-                  <p className="mb-2">👋 No messages yet!</p>
-                  <p className="text-sm">Start a conversation with the admin below.</p>
-                </div>
-              ) : (
-                chatMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.isFromAdmin ? 'justify-start' : 'justify-end'}`}
+          {chatSectionOpen && (
+            <CardContent className="dashboard-card-content dashboard-space-y-4">
+              {/* Error Display */}
+              {chatError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                  <div className="text-red-600 font-medium mb-2">⚠️ Connection Issue</div>
+                  <div className="text-red-700 text-sm mb-3">{chatError}</div>
+                  <Button 
+                    size="sm" 
+                    onClick={retryChatConnection}
+                    className="bg-red-600 hover:bg-red-700 text-white"
                   >
+                    Retry Connection
+                  </Button>
+                </div>
+              )}
+
+              {/* Chat Messages Display */}
+              <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
+                {chatLoading && !chatError ? (
+                  <div className="text-center text-gray-500 py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-breakfast-500 mx-auto mb-2"></div>
+                    Loading chat messages...
+                  </div>
+                ) : chatMessages.length === 0 && !chatError ? (
+                  <div className="text-center text-gray-500 py-8">
+                    <p className="mb-2">👋 No messages yet!</p>
+                    <p className="text-sm">Start a conversation with the admin below.</p>
+                  </div>
+                ) : (
+                  chatMessages.map((message) => (
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-sm ${
-                        message.isFromAdmin
-                          ? 'bg-yellow-500 text-white rounded-bl-sm'
-                          : 'bg-amber-800 text-white rounded-br-sm'
-                      }`}
+                      key={message.id}
+                      className={`flex ${message.isFromAdmin ? 'justify-start' : 'justify-end'}`}
                     >
-                      <div className="text-xs font-medium mb-1 opacity-90">
-                        {message.isFromAdmin ? '👨‍💼 Admin' : '👤 You'}
-                      </div>
-                      <div className="text-sm leading-relaxed">{message.message}</div>
-                      <div className="text-xs opacity-75 mt-2">
-                        {new Date(message.createdAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-sm ${
+                          message.isFromAdmin
+                            ? 'bg-yellow-500 text-white rounded-bl-sm'
+                            : 'bg-amber-800 text-white rounded-br-sm'
+                        }`}
+                      >
+                        <div className="text-xs font-medium mb-1 opacity-90">
+                          {message.isFromAdmin ? '👨‍💼 Admin' : '👤 You'}
+                        </div>
+                        <div className="text-sm leading-relaxed">{message.message}</div>
+                        <div className="text-xs opacity-75 mt-2">
+                          {new Date(message.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
 
-            {/* Message Input Section */}
-            <div className="space-y-3">
-              <div className="relative">
-                <Textarea
-                  value={userMessage}
-                  onChange={(e) => setUserMessage(e.target.value)}
-                  placeholder="Type your message to the admin..."
-                  className="min-h-[80px] resize-none pr-16"
-                  maxLength={500}
-                  disabled={isSendingMessage}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-                  {userMessage.length}/500
+              {/* Message Input Section */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <Textarea
+                    value={userMessage}
+                    onChange={(e) => setUserMessage(e.target.value)}
+                    placeholder="Type your message to the admin..."
+                    className="min-h-[80px] resize-none pr-16"
+                    maxLength={500}
+                    disabled={isSendingMessage}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                  />
+                  <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                    {userMessage.length}/500
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-500">
+                    Press Enter to send, Shift+Enter for new line
+                  </div>
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={isSendingMessage || !userMessage.trim()}
+                    className="dashboard-btn-primary"
+                    size="sm"
+                  >
+                    {isSendingMessage ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <span>Send</span>
+                        <span className="ml-1">📤</span>
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-              
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                  Press Enter to send, Shift+Enter for new line
-                </div>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={isSendingMessage || !userMessage.trim()}
-                  className="dashboard-btn-primary"
-                  size="sm"
-                >
-                  {isSendingMessage ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <span>Send</span>
-                      <span className="ml-1">📤</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
 
         {/* Quick Actions */}
