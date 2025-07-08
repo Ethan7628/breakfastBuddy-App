@@ -101,13 +101,14 @@ const Dashboard = () => {
     setChatLoading(true);
     setChatError(null);
 
+    let unsubscribeFn: (() => void) | null = null;
+
     const setupChatListener = async () => {
       try {
-        // First try to fetch messages directly without real-time listener
+        // First fetch messages directly
         const messagesQuery = query(
           collection(db, 'chatMessages'),
-          where('userId', '==', currentUser.uid),
-          orderBy('createdAt', 'asc')
+          where('userId', '==', currentUser.uid)
         );
 
         console.log('Attempting to fetch chat messages...');
@@ -127,7 +128,7 @@ const Dashboard = () => {
             createdAt: data.createdAt || new Date().toISOString(),
             isRead: data.isRead || false
           } as ChatMessage;
-        });
+        }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         
         setChatMessages(messages);
         setChatLoading(false);
@@ -135,9 +136,15 @@ const Dashboard = () => {
         
         console.log('Chat messages loaded successfully:', messages.length);
 
-        // Now set up real-time listener for new messages
-        const unsubscribe = onSnapshot(
-          messagesQuery,
+        // Set up real-time listener
+        const orderedQuery = query(
+          collection(db, 'chatMessages'),
+          where('userId', '==', currentUser.uid),
+          orderBy('createdAt', 'asc')
+        );
+
+        unsubscribeFn = onSnapshot(
+          orderedQuery,
           (snapshot) => {
             console.log('Real-time chat update received:', snapshot.docs.length);
             
@@ -159,22 +166,18 @@ const Dashboard = () => {
           },
           (error) => {
             console.error('Real-time chat listener error:', error);
-            // Don't show error for real-time updates, we already have initial data
           }
         );
-
-        return unsubscribe;
 
       } catch (error) {
         console.error('Error fetching chat messages:', error);
         setChatError('Unable to load chat messages. Please check your connection.');
         setChatLoading(false);
         
-        // Try a simpler fallback query
+        // Fallback: try simple query without ordering
         try {
           console.log('Attempting fallback chat query...');
-          const fallbackQuery = collection(db, 'chatMessages');
-          const fallbackSnapshot = await getDocs(fallbackQuery);
+          const fallbackSnapshot = await getDocs(collection(db, 'chatMessages'));
           
           const userMessages = fallbackSnapshot.docs
             .filter(doc => doc.data().userId === currentUser.uid)
@@ -204,12 +207,12 @@ const Dashboard = () => {
       }
     };
 
-    const unsubscribe = setupChatListener();
+    setupChatListener();
 
     return () => {
       console.log('Cleaning up chat listener');
-      if (unsubscribe && typeof unsubscribe === 'function') {
-        unsubscribe();
+      if (unsubscribeFn) {
+        unsubscribeFn();
       }
     };
   }, [currentUser?.uid]);
