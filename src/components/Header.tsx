@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,13 +18,14 @@ import '../styles/Header.css';
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [adminUnreadCount, setAdminUnreadCount] = useState(0);
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Listen for unread messages
+  // Listen for unread messages for regular users
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser || userData?.isAdmin) {
       setUnreadCount(0);
       return;
     }
@@ -40,7 +42,27 @@ const Header = () => {
     });
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser, userData?.isAdmin]);
+
+  // Listen for unread messages for admin users
+  useEffect(() => {
+    if (!currentUser || !userData?.isAdmin) {
+      setAdminUnreadCount(0);
+      return;
+    }
+
+    const messagesQuery = query(
+      collection(db, 'chatMessages'),
+      where('isFromAdmin', '==', false),
+      where('isRead', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      setAdminUnreadCount(snapshot.docs.length);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, userData?.isAdmin]);
 
   const handleLogout = async () => {
     try {
@@ -61,7 +83,12 @@ const Header = () => {
     { to: '/', label: 'Home', icon: Home },
     { to: '/menu', label: 'Menu', icon: null },
     ...(currentUser ? [{ to: '/orders', label: 'Orders', icon: null }] : []),
-    ...(userData?.isAdmin ? [{ to: '/admin', label: 'Admin', icon: null }] : []),
+    ...(userData?.isAdmin ? [{ 
+      to: '/admin', 
+      label: 'Admin', 
+      icon: null,
+      badge: adminUnreadCount > 0 ? adminUnreadCount : null 
+    }] : []),
     ...(currentUser && !userData?.isAdmin ? [{ 
       to: '/dashboard', 
       label: 'Dashboard', 
