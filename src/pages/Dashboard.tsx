@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,8 @@ const Dashboard = () => {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,59 +92,94 @@ const Dashboard = () => {
     fetchUserOrders();
   }, [currentUser]);
 
-  // Enhanced chat messages listener to receive admin replies
+  // Enhanced chat messages listener with better error handling
   useEffect(() => {
     if (!currentUser) {
       console.log('No current user for chat');
+      setChatLoading(false);
       return;
     }
 
     console.log('Setting up chat listener for user:', currentUser.uid);
     setChatLoading(true);
+    setChatError(null);
 
-    const messagesQuery = query(
-      collection(db, 'chatMessages'),
-      where('userId', '==', currentUser.uid),
-      orderBy('createdAt', 'asc')
-    );
+    const setupChatListener = () => {
+      try {
+        const messagesQuery = query(
+          collection(db, 'chatMessages'),
+          where('userId', '==', currentUser.uid),
+          orderBy('createdAt', 'asc')
+        );
 
-    const unsubscribe = onSnapshot(
-      messagesQuery,
-      (snapshot) => {
-        console.log('Chat messages received:', snapshot.docs.length);
-        const messages = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            userId: data.userId || '',
-            userName: data.userName || 'Unknown User',
-            userEmail: data.userEmail || '',
-            message: data.message || '',
-            isFromAdmin: data.isFromAdmin || false,
-            createdAt: data.createdAt || new Date().toISOString(),
-            isRead: data.isRead || false
-          } as ChatMessage;
-        });
-        
-        setChatMessages(messages);
+        const unsubscribe = onSnapshot(
+          messagesQuery,
+          (snapshot) => {
+            console.log('Chat messages received:', snapshot.docs.length);
+            
+            const messages = snapshot.docs.map(doc => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                userId: data.userId || '',
+                userName: data.userName || 'Unknown User',
+                userEmail: data.userEmail || '',
+                message: data.message || '',
+                isFromAdmin: data.isFromAdmin || false,
+                createdAt: data.createdAt || new Date().toISOString(),
+                isRead: data.isRead || false
+              } as ChatMessage;
+            });
+            
+            setChatMessages(messages);
+            setChatLoading(false);
+            setChatError(null);
+            setRetryCount(0);
+            
+            console.log('Chat messages updated successfully:', messages.length);
+          },
+          (error) => {
+            console.error('Chat listener error:', error);
+            setChatError('Failed to load messages. Please check your connection.');
+            setChatLoading(false);
+            
+            // Retry logic with exponential backoff
+            if (retryCount < 3) {
+              const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+              console.log(`Retrying chat connection in ${retryDelay}ms (attempt ${retryCount + 1})`);
+              
+              setTimeout(() => {
+                setRetryCount(prev => prev + 1);
+                setupChatListener();
+              }, retryDelay);
+            } else {
+              toast({
+                title: 'Chat Connection Error',
+                description: 'Unable to connect to chat. Please refresh the page.',
+                variant: 'destructive',
+              });
+            }
+          }
+        );
+
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error setting up chat listener:', error);
+        setChatError('Failed to initialize chat connection.');
         setChatLoading(false);
-      },
-      (error) => {
-        console.error('Chat listener error:', error);
-        setChatLoading(false);
-        toast({
-          title: 'Chat Error',
-          description: 'Failed to load messages. Please check your connection.',
-          variant: 'destructive',
-        });
+        return null;
       }
-    );
+    };
+
+    const unsubscribe = setupChatListener();
 
     return () => {
       console.log('Cleaning up chat listener');
-      unsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
-  }, [currentUser?.uid]);
+  }, [currentUser?.uid, retryCount]);
 
   const handleSendMessage = async () => {
     if (!userMessage.trim()) {
@@ -225,6 +263,12 @@ const Dashboard = () => {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const retryChatConnection = () => {
+    setRetryCount(0);
+    setChatError(null);
+    setChatLoading(true);
   };
 
   const selectedBlockName = blocks.find((b) => b.id === (userData?.selectedBlock || selectedBlock))?.name;
@@ -347,24 +391,49 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Improved Chat Section with Fixed Colors */}
+        {/* Enhanced Chat Section with Better Error Handling */}
         <Card className="dashboard-card-elevated mb-6">
           <CardHeader className="dashboard-card-header">
             <CardTitle className="dashboard-card-title dashboard-card-title-lg">
               <span>💬</span>
               <span>Chat with Admin</span>
-              {chatLoading && <span className="text-sm font-normal ml-2">(Loading...)</span>}
+              {chatLoading && <span className="text-sm font-normal ml-2">(Connecting...)</span>}
+              {chatError && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={retryChatConnection}
+                  className="ml-2 text-xs"
+                >
+                  Retry Connection
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="dashboard-card-content dashboard-space-y-4">
-            {/* Chat Messages Display with Fixed Colors */}
+            {/* Error Display */}
+            {chatError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <div className="text-red-600 font-medium mb-2">⚠️ Connection Issue</div>
+                <div className="text-red-700 text-sm mb-3">{chatError}</div>
+                <Button 
+                  size="sm" 
+                  onClick={retryChatConnection}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Retry Now
+                </Button>
+              </div>
+            )}
+
+            {/* Chat Messages Display */}
             <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
-              {chatLoading ? (
+              {chatLoading && !chatError ? (
                 <div className="text-center text-gray-500 py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-breakfast-500 mx-auto mb-2"></div>
-                  Loading messages...
+                  Connecting to chat...
                 </div>
-              ) : chatMessages.length === 0 ? (
+              ) : chatMessages.length === 0 && !chatError ? (
                 <div className="text-center text-gray-500 py-8">
                   <p className="mb-2">👋 No messages yet!</p>
                   <p className="text-sm">Start a conversation with the admin below.</p>
@@ -407,7 +476,7 @@ const Dashboard = () => {
                   placeholder="Type your message to the admin..."
                   className="min-h-[80px] resize-none pr-16"
                   maxLength={500}
-                  disabled={isSendingMessage}
+                  disabled={isSendingMessage || chatError !== null}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -426,7 +495,7 @@ const Dashboard = () => {
                 </div>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={isSendingMessage || !userMessage.trim()}
+                  disabled={isSendingMessage || !userMessage.trim() || chatError !== null}
                   className="dashboard-btn-primary"
                   size="sm"
                 >

@@ -75,6 +75,8 @@ const Admin = () => {
   const [replyMessage, setReplyMessage] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { userData } = useAuth();
 
   useEffect(() => {
@@ -156,7 +158,7 @@ const Admin = () => {
     }
   }, [userData]);
 
-  // Simplified admin chat listener
+  // Enhanced admin chat listener with better error handling
   useEffect(() => {
     if (!userData?.isAdmin) {
       console.log('User is not admin, skipping chat setup');
@@ -165,86 +167,117 @@ const Admin = () => {
 
     console.log('Setting up admin chat listener');
     setChatLoading(true);
+    setChatError(null);
 
-    const messagesQuery = query(
-      collection(db, 'chatMessages'),
-      orderBy('createdAt', 'asc')
-    );
+    const setupChatListener = () => {
+      try {
+        const messagesQuery = query(
+          collection(db, 'chatMessages'),
+          orderBy('createdAt', 'asc')
+        );
 
-    const unsubscribe = onSnapshot(
-      messagesQuery,
-      (snapshot) => {
-        console.log('Admin received chat messages:', snapshot.docs.length);
-        
-        const messages = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            userId: data.userId || '',
-            userName: data.userName || 'Unknown User',
-            userEmail: data.userEmail || '',
-            message: data.message || '',
-            isFromAdmin: data.isFromAdmin || false,
-            createdAt: data.createdAt || new Date().toISOString(),
-            isRead: data.isRead || false
-          } as ChatMessage;
-        });
+        const unsubscribe = onSnapshot(
+          messagesQuery,
+          (snapshot) => {
+            console.log('Admin received chat messages:', snapshot.docs.length);
+            
+            const messages = snapshot.docs.map(doc => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                userId: data.userId || '',
+                userName: data.userName || 'Unknown User',
+                userEmail: data.userEmail || '',
+                message: data.message || '',
+                isFromAdmin: data.isFromAdmin || false,
+                createdAt: data.createdAt || new Date().toISOString(),
+                isRead: data.isRead || false
+              } as ChatMessage;
+            });
 
-        // Group messages by user
-        const chatsByUser: { [userId: string]: UserChat } = {};
-        
-        messages.forEach(message => {
-          if (!chatsByUser[message.userId]) {
-            chatsByUser[message.userId] = {
-              userId: message.userId,
-              userName: message.userName,
-              userEmail: message.userEmail,
-              messages: [],
-              unreadCount: 0,
-              lastMessageTime: message.createdAt
-            };
+            // Group messages by user
+            const chatsByUser: { [userId: string]: UserChat } = {};
+            
+            messages.forEach(message => {
+              if (!chatsByUser[message.userId]) {
+                chatsByUser[message.userId] = {
+                  userId: message.userId,
+                  userName: message.userName,
+                  userEmail: message.userEmail,
+                  messages: [],
+                  unreadCount: 0,
+                  lastMessageTime: message.createdAt
+                };
+              }
+              
+              chatsByUser[message.userId].messages.push(message);
+              
+              // Update last message time
+              if (message.createdAt > chatsByUser[message.userId].lastMessageTime) {
+                chatsByUser[message.userId].lastMessageTime = message.createdAt;
+              }
+              
+              // Count unread messages from users (not from admin)
+              if (!message.isFromAdmin && !message.isRead) {
+                chatsByUser[message.userId].unreadCount++;
+              }
+            });
+
+            // Sort chats by latest message time
+            const sortedChats = Object.values(chatsByUser).sort((a, b) => {
+              return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+            });
+
+            console.log('Processed admin chats:', sortedChats.length);
+            setUserChats(sortedChats);
+            setChatLoading(false);
+            setChatError(null);
+            setRetryCount(0);
+          },
+          (error) => {
+            console.error('Admin chat listener error:', error);
+            setChatError('Failed to load chat messages. Please check your connection.');
+            setChatLoading(false);
+            
+            // Retry logic with exponential backoff
+            if (retryCount < 3) {
+              const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+              console.log(`Retrying admin chat connection in ${retryDelay}ms (attempt ${retryCount + 1})`);
+              
+              setTimeout(() => {
+                setRetryCount(prev => prev + 1);
+                setupChatListener();
+              }, retryDelay);
+            } else {
+              toast({
+                title: 'Chat Connection Error',
+                description: 'Unable to connect to chat system. Please refresh the page.',
+                variant: 'destructive'
+              });
+            }
           }
-          
-          chatsByUser[message.userId].messages.push(message);
-          
-          // Update last message time
-          if (message.createdAt > chatsByUser[message.userId].lastMessageTime) {
-            chatsByUser[message.userId].lastMessageTime = message.createdAt;
-          }
-          
-          // Count unread messages from users (not from admin)
-          if (!message.isFromAdmin && !message.isRead) {
-            chatsByUser[message.userId].unreadCount++;
-          }
-        });
+        );
 
-        // Sort chats by latest message time
-        const sortedChats = Object.values(chatsByUser).sort((a, b) => {
-          return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
-        });
-
-        console.log('Processed admin chats:', sortedChats.length);
-        setUserChats(sortedChats);
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error setting up admin chat listener:', error);
+        setChatError('Failed to initialize chat connection.');
         setChatLoading(false);
-      },
-      (error) => {
-        console.error('Admin chat listener error:', error);
-        setChatLoading(false);
-        toast({
-          title: 'Chat Error',
-          description: 'Failed to load chat messages.',
-          variant: 'destructive'
-        });
+        return null;
       }
-    );
+    };
+
+    const unsubscribe = setupChatListener();
 
     return () => {
       console.log('Cleaning up admin chat listener');
-      unsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
-  }, [userData?.isAdmin]);
+  }, [userData?.isAdmin, retryCount]);
 
-  // Simplified reply sending
+  // Improved reply sending with better error handling
   const sendReplyToUser = async (userId: string, userName: string, userEmail: string) => {
     if (!replyMessage.trim()) {
       toast({
@@ -282,7 +315,7 @@ const Admin = () => {
       console.error('Error sending admin reply:', error);
       toast({
         title: 'Send Error',
-        description: 'Failed to send reply. Please try again.',
+        description: 'Failed to send reply. Please check your connection and try again.',
         variant: 'destructive',
       });
     } finally {
@@ -329,6 +362,12 @@ const Admin = () => {
         variant: 'destructive'
       });
     }
+  };
+
+  const retryChatConnection = () => {
+    setRetryCount(0);
+    setChatError(null);
+    setChatLoading(true);
   };
 
   const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
@@ -473,19 +512,40 @@ const Admin = () => {
         </Card>
       </div>
 
-      {/* Chat Management Section with Fixed Colors */}
+      {/* Enhanced Chat Management Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Chat List */}
+        {/* Chat List with Error Handling */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="admin-stats-card-title">
-              User Chats ({userChats.length})
-              {chatLoading && <span className="text-sm font-normal ml-2">(Loading...)</span>}
+            <CardTitle className="admin-stats-card-title flex justify-between items-center">
+              <span>User Chats ({userChats.length})</span>
+              {chatError && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={retryChatConnection}
+                  className="text-xs"
+                >
+                  Retry
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="max-h-96 overflow-y-auto">
-              {chatLoading ? (
+              {chatError ? (
+                <div className="p-4 text-center">
+                  <div className="text-red-600 font-medium mb-2">⚠️ Connection Error</div>
+                  <div className="text-red-700 text-sm mb-3">{chatError}</div>
+                  <Button 
+                    size="sm" 
+                    onClick={retryChatConnection}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Retry Connection
+                  </Button>
+                </div>
+              ) : chatLoading ? (
                 <div className="p-4 text-center">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-breakfast-500 mx-auto mb-2"></div>
                   <p className="text-sm text-gray-500">Loading chats...</p>
@@ -532,7 +592,7 @@ const Admin = () => {
           </CardContent>
         </Card>
 
-        {/* Enhanced Chat Window with Fixed Colors */}
+        {/* Enhanced Chat Window */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="admin-stats-card-title flex justify-between items-center">
@@ -561,7 +621,7 @@ const Admin = () => {
           <CardContent>
             {selectedChatData ? (
               <div className="space-y-4">
-                {/* Messages with Fixed Colors */}
+                {/* Messages Display */}
                 <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
                   {selectedChatData.messages.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">
@@ -610,7 +670,7 @@ const Admin = () => {
                       placeholder={`Reply to ${selectedChatData.userName}...`}
                       className="min-h-[80px] resize-none pr-16"
                       maxLength={500}
-                      disabled={isSendingReply}
+                      disabled={isSendingReply || chatError !== null}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -637,7 +697,7 @@ const Admin = () => {
                         selectedChatData.userName,
                         selectedChatData.userEmail
                       )}
-                      disabled={isSendingReply || !replyMessage.trim()}
+                      disabled={isSendingReply || !replyMessage.trim() || chatError !== null}
                       className="bg-blue-600 hover:bg-blue-700"
                       size="sm"
                     >
