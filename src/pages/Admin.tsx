@@ -76,7 +76,6 @@ const Admin = () => {
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const { userData } = useAuth();
 
   useEffect(() => {
@@ -158,7 +157,7 @@ const Admin = () => {
     }
   }, [userData]);
 
-  // Enhanced admin chat listener with better error handling
+  // Simplified admin chat listener
   useEffect(() => {
     if (!userData?.isAdmin) {
       console.log('User is not admin, skipping chat setup');
@@ -169,8 +168,70 @@ const Admin = () => {
     setChatLoading(true);
     setChatError(null);
 
-    const setupChatListener = () => {
+    const setupChatListener = async () => {
       try {
+        // First try to fetch all messages directly
+        console.log('Fetching all chat messages for admin...');
+        const messagesSnapshot = await getDocs(collection(db, 'chatMessages'));
+        
+        console.log('Admin received chat messages:', messagesSnapshot.docs.length);
+        
+        const messages = messagesSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: data.userId || '',
+            userName: data.userName || 'Unknown User',
+            userEmail: data.userEmail || '',
+            message: data.message || '',
+            isFromAdmin: data.isFromAdmin || false,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: data.isRead || false
+          } as ChatMessage;
+        });
+
+        // Sort messages by creation time
+        messages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+        // Group messages by user
+        const chatsByUser: { [userId: string]: UserChat } = {};
+        
+        messages.forEach(message => {
+          if (!chatsByUser[message.userId]) {
+            chatsByUser[message.userId] = {
+              userId: message.userId,
+              userName: message.userName,
+              userEmail: message.userEmail,
+              messages: [],
+              unreadCount: 0,
+              lastMessageTime: message.createdAt
+            };
+          }
+          
+          chatsByUser[message.userId].messages.push(message);
+          
+          // Update last message time
+          if (message.createdAt > chatsByUser[message.userId].lastMessageTime) {
+            chatsByUser[message.userId].lastMessageTime = message.createdAt;
+          }
+          
+          // Count unread messages from users (not from admin)
+          if (!message.isFromAdmin && !message.isRead) {
+            chatsByUser[message.userId].unreadCount++;
+          }
+        });
+
+        // Sort chats by latest message time
+        const sortedChats = Object.values(chatsByUser).sort((a, b) => {
+          return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+        });
+
+        console.log('Processed admin chats:', sortedChats.length);
+        setUserChats(sortedChats);
+        setChatLoading(false);
+        setChatError(null);
+
+        // Now set up real-time listener for updates
         const messagesQuery = query(
           collection(db, 'chatMessages'),
           orderBy('createdAt', 'asc')
@@ -179,9 +240,9 @@ const Admin = () => {
         const unsubscribe = onSnapshot(
           messagesQuery,
           (snapshot) => {
-            console.log('Admin received chat messages:', snapshot.docs.length);
+            console.log('Real-time admin chat update:', snapshot.docs.length);
             
-            const messages = snapshot.docs.map(doc => {
+            const updatedMessages = snapshot.docs.map(doc => {
               const data = doc.data();
               return {
                 id: doc.id,
@@ -195,12 +256,12 @@ const Admin = () => {
               } as ChatMessage;
             });
 
-            // Group messages by user
-            const chatsByUser: { [userId: string]: UserChat } = {};
+            // Re-group messages by user
+            const updatedChatsByUser: { [userId: string]: UserChat } = {};
             
-            messages.forEach(message => {
-              if (!chatsByUser[message.userId]) {
-                chatsByUser[message.userId] = {
+            updatedMessages.forEach(message => {
+              if (!updatedChatsByUser[message.userId]) {
+                updatedChatsByUser[message.userId] = {
                   userId: message.userId,
                   userName: message.userName,
                   userEmail: message.userEmail,
@@ -210,60 +271,35 @@ const Admin = () => {
                 };
               }
               
-              chatsByUser[message.userId].messages.push(message);
+              updatedChatsByUser[message.userId].messages.push(message);
               
-              // Update last message time
-              if (message.createdAt > chatsByUser[message.userId].lastMessageTime) {
-                chatsByUser[message.userId].lastMessageTime = message.createdAt;
+              if (message.createdAt > updatedChatsByUser[message.userId].lastMessageTime) {
+                updatedChatsByUser[message.userId].lastMessageTime = message.createdAt;
               }
               
-              // Count unread messages from users (not from admin)
               if (!message.isFromAdmin && !message.isRead) {
-                chatsByUser[message.userId].unreadCount++;
+                updatedChatsByUser[message.userId].unreadCount++;
               }
             });
 
-            // Sort chats by latest message time
-            const sortedChats = Object.values(chatsByUser).sort((a, b) => {
+            const updatedSortedChats = Object.values(updatedChatsByUser).sort((a, b) => {
               return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
             });
 
-            console.log('Processed admin chats:', sortedChats.length);
-            setUserChats(sortedChats);
-            setChatLoading(false);
-            setChatError(null);
-            setRetryCount(0);
+            setUserChats(updatedSortedChats);
           },
           (error) => {
-            console.error('Admin chat listener error:', error);
-            setChatError('Failed to load chat messages. Please check your connection.');
-            setChatLoading(false);
-            
-            // Retry logic with exponential backoff
-            if (retryCount < 3) {
-              const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-              console.log(`Retrying admin chat connection in ${retryDelay}ms (attempt ${retryCount + 1})`);
-              
-              setTimeout(() => {
-                setRetryCount(prev => prev + 1);
-                setupChatListener();
-              }, retryDelay);
-            } else {
-              toast({
-                title: 'Chat Connection Error',
-                description: 'Unable to connect to chat system. Please refresh the page.',
-                variant: 'destructive'
-              });
-            }
+            console.error('Real-time admin chat listener error:', error);
+            // Don't show error for real-time updates since we have initial data
           }
         );
 
         return unsubscribe;
+
       } catch (error) {
-        console.error('Error setting up admin chat listener:', error);
-        setChatError('Failed to initialize chat connection.');
+        console.error('Error fetching admin chat messages:', error);
+        setChatError('Failed to load chat messages. Please check your connection.');
         setChatLoading(false);
-        return null;
       }
     };
 
@@ -271,11 +307,11 @@ const Admin = () => {
 
     return () => {
       console.log('Cleaning up admin chat listener');
-      if (unsubscribe) {
+      if (unsubscribe && typeof unsubscribe === 'function') {
         unsubscribe();
       }
     };
-  }, [userData?.isAdmin, retryCount]);
+  }, [userData?.isAdmin]);
 
   // Improved reply sending with better error handling
   const sendReplyToUser = async (userId: string, userName: string, userEmail: string) => {
@@ -365,9 +401,9 @@ const Admin = () => {
   };
 
   const retryChatConnection = () => {
-    setRetryCount(0);
     setChatError(null);
     setChatLoading(true);
+    window.location.reload();
   };
 
   const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
@@ -512,9 +548,9 @@ const Admin = () => {
         </Card>
       </div>
 
-      {/* Enhanced Chat Management Section */}
+      {/* Improved Chat Management Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Chat List with Error Handling */}
+        {/* Chat List with Better Error Handling */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="admin-stats-card-title flex justify-between items-center">
@@ -670,7 +706,7 @@ const Admin = () => {
                       placeholder={`Reply to ${selectedChatData.userName}...`}
                       className="min-h-[80px] resize-none pr-16"
                       maxLength={500}
-                      disabled={isSendingReply || chatError !== null}
+                      disabled={isSendingReply}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -697,7 +733,7 @@ const Admin = () => {
                         selectedChatData.userName,
                         selectedChatData.userEmail
                       )}
-                      disabled={isSendingReply || !replyMessage.trim() || chatError !== null}
+                      disabled={isSendingReply || !replyMessage.trim()}
                       className="bg-blue-600 hover:bg-blue-700"
                       size="sm"
                     >

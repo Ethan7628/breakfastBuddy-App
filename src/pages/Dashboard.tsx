@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -57,7 +56,6 @@ const Dashboard = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -92,7 +90,6 @@ const Dashboard = () => {
     fetchUserOrders();
   }, [currentUser]);
 
-  // Enhanced chat messages listener with better error handling
   useEffect(() => {
     if (!currentUser) {
       console.log('No current user for chat');
@@ -104,20 +101,47 @@ const Dashboard = () => {
     setChatLoading(true);
     setChatError(null);
 
-    const setupChatListener = () => {
+    const setupChatListener = async () => {
       try {
+        // First try to fetch messages directly without real-time listener
         const messagesQuery = query(
           collection(db, 'chatMessages'),
           where('userId', '==', currentUser.uid),
           orderBy('createdAt', 'asc')
         );
 
+        console.log('Attempting to fetch chat messages...');
+        const snapshot = await getDocs(messagesQuery);
+        
+        console.log('Chat messages snapshot received:', snapshot.docs.length);
+        
+        const messages = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: data.userId || '',
+            userName: data.userName || 'Unknown User',
+            userEmail: data.userEmail || '',
+            message: data.message || '',
+            isFromAdmin: data.isFromAdmin || false,
+            createdAt: data.createdAt || new Date().toISOString(),
+            isRead: data.isRead || false
+          } as ChatMessage;
+        });
+        
+        setChatMessages(messages);
+        setChatLoading(false);
+        setChatError(null);
+        
+        console.log('Chat messages loaded successfully:', messages.length);
+
+        // Now set up real-time listener for new messages
         const unsubscribe = onSnapshot(
           messagesQuery,
           (snapshot) => {
-            console.log('Chat messages received:', snapshot.docs.length);
+            console.log('Real-time chat update received:', snapshot.docs.length);
             
-            const messages = snapshot.docs.map(doc => {
+            const updatedMessages = snapshot.docs.map(doc => {
               const data = doc.data();
               return {
                 id: doc.id,
@@ -131,43 +155,52 @@ const Dashboard = () => {
               } as ChatMessage;
             });
             
-            setChatMessages(messages);
-            setChatLoading(false);
-            setChatError(null);
-            setRetryCount(0);
-            
-            console.log('Chat messages updated successfully:', messages.length);
+            setChatMessages(updatedMessages);
           },
           (error) => {
-            console.error('Chat listener error:', error);
-            setChatError('Failed to load messages. Please check your connection.');
-            setChatLoading(false);
-            
-            // Retry logic with exponential backoff
-            if (retryCount < 3) {
-              const retryDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-              console.log(`Retrying chat connection in ${retryDelay}ms (attempt ${retryCount + 1})`);
-              
-              setTimeout(() => {
-                setRetryCount(prev => prev + 1);
-                setupChatListener();
-              }, retryDelay);
-            } else {
-              toast({
-                title: 'Chat Connection Error',
-                description: 'Unable to connect to chat. Please refresh the page.',
-                variant: 'destructive',
-              });
-            }
+            console.error('Real-time chat listener error:', error);
+            // Don't show error for real-time updates, we already have initial data
           }
         );
 
         return unsubscribe;
+
       } catch (error) {
-        console.error('Error setting up chat listener:', error);
-        setChatError('Failed to initialize chat connection.');
+        console.error('Error fetching chat messages:', error);
+        setChatError('Unable to load chat messages. Please check your connection.');
         setChatLoading(false);
-        return null;
+        
+        // Try a simpler fallback query
+        try {
+          console.log('Attempting fallback chat query...');
+          const fallbackQuery = collection(db, 'chatMessages');
+          const fallbackSnapshot = await getDocs(fallbackQuery);
+          
+          const userMessages = fallbackSnapshot.docs
+            .filter(doc => doc.data().userId === currentUser.uid)
+            .map(doc => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                userId: data.userId || '',
+                userName: data.userName || 'Unknown User',
+                userEmail: data.userEmail || '',
+                message: data.message || '',
+                isFromAdmin: data.isFromAdmin || false,
+                createdAt: data.createdAt || new Date().toISOString(),
+                isRead: data.isRead || false
+              } as ChatMessage;
+            })
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            
+          setChatMessages(userMessages);
+          setChatError(null);
+          setChatLoading(false);
+          console.log('Fallback chat query successful:', userMessages.length);
+          
+        } catch (fallbackError) {
+          console.error('Fallback chat query also failed:', fallbackError);
+        }
       }
     };
 
@@ -175,11 +208,11 @@ const Dashboard = () => {
 
     return () => {
       console.log('Cleaning up chat listener');
-      if (unsubscribe) {
+      if (unsubscribe && typeof unsubscribe === 'function') {
         unsubscribe();
       }
     };
-  }, [currentUser?.uid, retryCount]);
+  }, [currentUser?.uid]);
 
   const handleSendMessage = async () => {
     if (!userMessage.trim()) {
@@ -266,14 +299,14 @@ const Dashboard = () => {
   };
 
   const retryChatConnection = () => {
-    setRetryCount(0);
     setChatError(null);
     setChatLoading(true);
+    // Trigger re-fetch by changing a dependency
+    window.location.reload();
   };
 
   const selectedBlockName = blocks.find((b) => b.id === (userData?.selectedBlock || selectedBlock))?.name;
 
-  // Calculate user statistics
   const totalOrders = userOrders.length;
   const thisMonthOrders = userOrders.filter(order => {
     const orderDate = new Date(order.createdAt);
@@ -282,7 +315,6 @@ const Dashboard = () => {
     return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
   }).length;
 
-  // Find most frequently ordered item
   const itemCounts: { [key: string]: number } = {};
   userOrders.forEach(order => {
     order.items.forEach(item => {
@@ -391,23 +423,13 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Enhanced Chat Section with Better Error Handling */}
+        {/* Improved Chat Section with Better Error Handling */}
         <Card className="dashboard-card-elevated mb-6">
           <CardHeader className="dashboard-card-header">
             <CardTitle className="dashboard-card-title dashboard-card-title-lg">
               <span>💬</span>
               <span>Chat with Admin</span>
-              {chatLoading && <span className="text-sm font-normal ml-2">(Connecting...)</span>}
-              {chatError && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={retryChatConnection}
-                  className="ml-2 text-xs"
-                >
-                  Retry Connection
-                </Button>
-              )}
+              {chatLoading && <span className="text-sm font-normal ml-2">(Loading...)</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="dashboard-card-content dashboard-space-y-4">
@@ -421,7 +443,7 @@ const Dashboard = () => {
                   onClick={retryChatConnection}
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
-                  Retry Now
+                  Retry Connection
                 </Button>
               </div>
             )}
@@ -431,7 +453,7 @@ const Dashboard = () => {
               {chatLoading && !chatError ? (
                 <div className="text-center text-gray-500 py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-breakfast-500 mx-auto mb-2"></div>
-                  Connecting to chat...
+                  Loading chat messages...
                 </div>
               ) : chatMessages.length === 0 && !chatError ? (
                 <div className="text-center text-gray-500 py-8">
@@ -476,7 +498,7 @@ const Dashboard = () => {
                   placeholder="Type your message to the admin..."
                   className="min-h-[80px] resize-none pr-16"
                   maxLength={500}
-                  disabled={isSendingMessage || chatError !== null}
+                  disabled={isSendingMessage}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -495,7 +517,7 @@ const Dashboard = () => {
                 </div>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={isSendingMessage || !userMessage.trim() || chatError !== null}
+                  disabled={isSendingMessage || !userMessage.trim()}
                   className="dashboard-btn-primary"
                   size="sm"
                 >
