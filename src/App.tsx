@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import AuthRoute from "@/components/AuthRoute";
 import AdminRoute from "@/components/AdminRoute";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -20,11 +21,14 @@ import Orders from "./pages/Orders";
 
 const queryClient = new QueryClient();
 
-// Layout component that includes Header
+// Layout component that includes Header and Footer
 const Layout = () => (
-  <div className="min-h-screen bg-gradient-to-br from-breakfast-50 to-sunrise-50">
+  <div className="min-h-screen bg-gradient-to-br from-breakfast-50 to-sunrise-50 flex flex-col">
     <Header />
-    <Outlet />
+    <main className="flex-1">
+      <Outlet />
+    </main>
+    <Footer />
   </div>
 );
 
