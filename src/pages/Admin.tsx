@@ -313,6 +313,38 @@ const Admin = () => {
     };
   }, [userData?.isAdmin]);
 
+  // Auto-mark messages as read when a chat is selected
+  useEffect(() => {
+    if (selectedChat) {
+      const markMessagesAsRead = async () => {
+        try {
+          const selectedChatData = userChats.find(chat => chat.userId === selectedChat);
+          if (!selectedChatData) return;
+
+          const unreadMessages = selectedChatData.messages.filter(msg => 
+            !msg.isFromAdmin && !msg.isRead
+          );
+
+          if (unreadMessages.length > 0) {
+            const { updateDoc, doc } = await import('firebase/firestore');
+            
+            const updatePromises = unreadMessages.map(msg =>
+              updateDoc(doc(db, 'chatMessages', msg.id), { isRead: true })
+            );
+
+            await Promise.all(updatePromises);
+            console.log(`Auto-marked ${unreadMessages.length} messages as read for user ${selectedChat}`);
+          }
+        } catch (error) {
+          console.error('Error auto-marking messages as read:', error);
+        }
+      };
+
+      // Small delay to ensure the chat is fully loaded
+      setTimeout(markMessagesAsRead, 500);
+    }
+  }, [selectedChat, userChats]);
+
   // Improved reply sending with better error handling
   const sendReplyToUser = async (userId: string, userName: string, userEmail: string) => {
     if (!replyMessage.trim()) {
