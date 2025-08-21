@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { playNotificationSound } from '@/utils/soundNotification';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -172,6 +173,7 @@ const Dashboard = () => {
             );
 
             if (newAdminMessages.length > 0) {
+              playNotificationSound();
               toast({
                 title: 'New message from Admin',
                 description: `You have ${newAdminMessages.length} new message(s)`,
