@@ -30,7 +30,7 @@ interface MenuItem {
 const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
   const meals: MenuItem[] = [];
 
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 15; i++) {
     const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
     const data = await response.json();
     const meal: MealItem = data.meals[0];
@@ -39,7 +39,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
       id: meal.idMeal,
       name: meal.strMeal,
       description: meal.strInstructions.substring(0, 100) + '...',
-      price: Math.floor(Math.random() * 50000) + 15000, // UGX 15,000 - 65,000
+      price: Math.floor(Math.random() * 40000) + 10000, // UGX 10,000 - 50,000
       category: 'Breakfast Special',
       image: meal.strMealThumb,
       popular: Math.random() > 0.7
@@ -157,12 +157,12 @@ const Menu = () => {
         where('userId', '==', currentUser.uid)
       );
       const cartSnapshot = await getDocs(cartQuery);
-      
+
       // Delete all cart items
-      const deletePromises = cartSnapshot.docs.map(docSnapshot => 
+      const deletePromises = cartSnapshot.docs.map(docSnapshot =>
         deleteDoc(doc(db, 'userCarts', docSnapshot.id))
       );
-      
+
       await Promise.all(deletePromises);
       console.log('Cart cleared successfully');
     } catch (error) {
