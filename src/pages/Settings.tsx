@@ -118,7 +118,7 @@ const Settings = () => {
                   id="location"
                   value={selectedBlock}
                   onChange={(e) => setSelectedBlock(e.target.value)}
-                  className="w-full px-3 py-2 border border-breakfast-300 rounded-md focus:outline-none focus:ring-2 focus:ring-breakfast-500"
+                  className="w-full px-3 py-2 border border-breakfast-300 rounded-md focus:outline-none focus:ring-2 focus:ring-breakfast-500 bg-background"
                 >
                   <option value="">Choose your block...</option>
                   {blocks.map((block) => (

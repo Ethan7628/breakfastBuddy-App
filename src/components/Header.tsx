@@ -118,8 +118,8 @@ const Header = () => {
   return (
     <header className="header-root">
       <div className="header-inner">
-        {/* Logo - Only show when not in standalone mode (not installed as PWA) */}
-        {!isStandalone && (
+        {/* Logo - Show when not in standalone mode OR when in standalone mode on wide screens */}
+        {(!isStandalone || (isStandalone && window.innerWidth >= 1024)) && (
           <Link
             to="/"
             className="header-logo-link"
