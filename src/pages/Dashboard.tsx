@@ -229,7 +229,7 @@ const Dashboard = () => {
         unsubscribeFn();
       }
     };
-  }, [currentUser?.uid]);
+  }, [currentUser, currentUser?.uid]);
 
   useEffect(() => {
     if (chatSectionOpen && currentUser) {

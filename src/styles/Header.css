@@ -61,7 +61,7 @@
     font-size: 1rem;
     transition: all 0.2s;
     text-decoration: none;
-    color: #22223b;
+    color: #fff; /* Changed from #22223b to white */
 }
 
 .header-nav-link.active {
@@ -73,6 +73,14 @@
 .header-nav-link:hover {
     background: rgba(255, 235, 59, 0.1);
     color: #b45309;
+}
+
+/* Dropdown menu custom background */
+.header-dropdown-content {
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%); /* Yellow gradient like active nav */
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.04);
 }
 
 .header-auth {

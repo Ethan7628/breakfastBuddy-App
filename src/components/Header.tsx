@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -83,17 +82,17 @@ const Header = () => {
     { to: '/', label: 'Home', icon: Home },
     { to: '/menu', label: 'Menu', icon: null },
     ...(currentUser ? [{ to: '/orders', label: 'Orders', icon: null }] : []),
-    ...(userData?.isAdmin ? [{ 
-      to: '/admin', 
-      label: 'Admin', 
+    ...(userData?.isAdmin ? [{
+      to: '/admin',
+      label: 'Admin',
       icon: null,
-      badge: adminUnreadCount > 0 ? adminUnreadCount : null 
+      badge: adminUnreadCount > 0 ? adminUnreadCount : null
     }] : []),
-    ...(currentUser && !userData?.isAdmin ? [{ 
-      to: '/dashboard', 
-      label: 'Dashboard', 
+    ...(currentUser && !userData?.isAdmin ? [{
+      to: '/dashboard',
+      label: 'Dashboard',
       icon: null,
-      badge: unreadCount > 0 ? unreadCount : null 
+      badge: unreadCount > 0 ? unreadCount : null
     }] : []),
   ];
 
@@ -146,9 +145,9 @@ const Header = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-48 bg-popover border border-border shadow-lg"
+                  className="w-48 header-dropdown-content"
                 >
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleSettingsClick}
                     className="flex items-center space-x-2 cursor-pointer hover:bg-accent/10"
                   >
