@@ -129,9 +129,7 @@ const Header = () => {
         <div className="header-auth">
           {currentUser ? (
             <div className="header-auth-user">
-              <span className="header-auth-welcome">
-                Welcome, {userData?.name || 'User'}!
-              </span>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -219,9 +217,6 @@ const Header = () => {
 
             {currentUser ? (
               <div className="header-mobile-auth">
-                <div className="px-4 py-2 text-sm font-medium text-muted-foreground">
-                  Welcome, {userData?.name || 'User'}!
-                </div>
                 <button
                   onClick={() => {
                     handleSettingsClick();
