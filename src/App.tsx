@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,15 +23,46 @@ import Orders from "./pages/Orders";
 const queryClient = new QueryClient();
 
 // Layout component that includes Header and Footer
-const Layout = () => (
-  <div className="min-h-screen bg-gradient-to-br from-breakfast-50 to-sunrise-50 flex flex-col">
-    <Header />
-    <main className="flex-1">
-      <Outlet />
-    </main>
-    <Footer />
-  </div>
-);
+const Layout = () => {
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const checkStandaloneMode = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone || 
+                        document.referrer.includes('android-app://');
+      setIsStandalone(standalone);
+      
+      // Add app-specific class to body when in standalone mode
+      if (standalone) {
+        document.body.classList.add('pwa-standalone');
+      } else {
+        document.body.classList.remove('pwa-standalone');
+      }
+    };
+
+    checkStandaloneMode();
+    
+    // Listen for display mode changes
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    mediaQuery.addEventListener('change', checkStandaloneMode);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', checkStandaloneMode);
+      document.body.classList.remove('pwa-standalone');
+    };
+  }, []);
+
+  return (
+    <div className={`min-h-screen bg-gradient-to-br from-breakfast-50 to-sunrise-50 flex flex-col ${isStandalone ? 'pwa-app-layout' : ''}`}>
+      <Header />
+      <main className={`flex-1 ${isStandalone ? 'pwa-main-content' : ''}`}>
+        <Outlet />
+      </main>
+      {!isStandalone && <Footer />}
+    </div>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
