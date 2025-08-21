@@ -286,3 +286,119 @@
     border-color: hsl(var(--border));
   }
 }
+
+/* PWA Standalone Mode Styles - Makes app behave like native application */
+@media (display-mode: standalone) {
+  body.pwa-standalone {
+    /* Remove default web styles and add app-like behavior */
+    user-select: none; /* Prevent text selection like native apps */
+    -webkit-touch-callout: none; /* Disable callout on iOS */
+    -webkit-user-select: none; /* Disable text selection on iOS */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+  }
+
+  .pwa-app-layout {
+    /* App-like layout with proper safe areas */
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+    min-height: 100vh;
+    min-height: 100dvh; /* Use dynamic viewport height */
+  }
+
+  .pwa-main-content {
+    /* Native app-like content area */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    scroll-behavior: smooth;
+  }
+
+  /* Header adjustments for PWA */
+  .header-root {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(124, 71, 0, 0.95);
+    border-bottom: 1px solid rgba(124, 71, 0, 0.1);
+  }
+
+  /* Remove footer in standalone mode (handled in Layout component) */
+  
+  /* Improve button interactions for native feel */
+  button, .btn-primary, .btn-accent, [role="button"] {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  button:active, .btn-primary:active, .btn-accent:active, [role="button"]:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease-in-out;
+  }
+
+  /* Native-like navigation */
+  .header-nav-link, .header-mobile-menu-link {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .header-nav-link:active, .header-mobile-menu-link:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease-in-out;
+  }
+
+  /* Cards and interactive elements */
+  .card, .card-elevated, [role="button"], .interactive-element {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .card:active, .card-elevated:active, [role="button"]:active, .interactive-element:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease-in-out;
+  }
+
+  /* Form elements native behavior */
+  input, textarea, select {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 8px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  /* List items native behavior */
+  [role="listitem"], .list-item {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  [role="listitem"]:active, .list-item:active {
+    background-color: rgba(0, 0, 0, 0.05);
+    transition: background-color 0.1s ease-in-out;
+  }
+
+  /* Prevent overscroll bounce */
+  body, html {
+    overscroll-behavior: none;
+  }
+
+  /* Native-like scrollbars */
+  ::-webkit-scrollbar {
+    width: 2px;
+    height: 2px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 1px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
