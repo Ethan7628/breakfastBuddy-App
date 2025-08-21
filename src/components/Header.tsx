@@ -18,9 +18,28 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [adminUnreadCount, setAdminUnreadCount] = useState(0);
+  const [isStandalone, setIsStandalone] = useState(false);
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Detect if app is running in standalone mode (installed as PWA)
+  useEffect(() => {
+    const checkStandaloneMode = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone || 
+                        document.referrer.includes('android-app://');
+      setIsStandalone(standalone);
+    };
+
+    checkStandaloneMode();
+    
+    // Listen for display mode changes
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    mediaQuery.addEventListener('change', checkStandaloneMode);
+    
+    return () => mediaQuery.removeEventListener('change', checkStandaloneMode);
+  }, []);
 
   // Listen for unread messages for regular users
   useEffect(() => {
@@ -99,13 +118,15 @@ const Header = () => {
   return (
     <header className="header-root">
       <div className="header-inner">
-        {/* Logo */}
-        <Link
-          to="/"
-          className="header-logo-link"
-        >
-          <img src={logo} alt='logo' className="header-logo-img" />
-        </Link>
+        {/* Logo - Only show when not in standalone mode (not installed as PWA) */}
+        {!isStandalone && (
+          <Link
+            to="/"
+            className="header-logo-link"
+          >
+            <img src={logo} alt='logo' className="header-logo-img" />
+          </Link>
+        )}
 
         {/* Desktop Navigation */}
         <nav className="header-nav">
