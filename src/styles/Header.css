@@ -76,6 +76,13 @@
     color: #fff; /* Changed from #22223b to white */
 }
 
+.login-link{
+    color: #fff;
+}
+.login-link:hover{
+   text-decoration: underline;
+}
+
 .header-nav-link.active {
     background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
     color: #22223b;

@@ -110,53 +110,54 @@ const Settings = () => {
         </Card>
 
         {/* Location Settings */}
-        <Card className="dashboard-card-elevated lg:col-span-1">
-            <CardHeader className="dashboard-card-header">
-              <CardTitle className="dashboard-card-title dashboard-card-title-lg">
-                <span>📍</span>
-                <span>Your Location</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="dashboard-card-content dashboard-space-y-6">
-              <div>
-                <label className="dashboard-label">
-                  Select your campus block:
-                </label>
-                <Select value={selectedBlock} onValueChange={setSelectedBlock}>
-                  <SelectTrigger className="custom-select h-12 text-base">
-                    <SelectValue placeholder="Choose your block" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border shadow-lg">
-                    {blocks.map((block) => (
-                      <SelectItem
-                        key={block.id}
-                        value={block.id}
-                        className="select-item hover:bg-accent/10 cursor-pointer"
+          <Card className="dashboard-card-elevated lg:col-span-1">
+                    <CardHeader className="dashboard-card-header">
+                      <CardTitle className="dashboard-card-title dashboard-card-title-lg">
+                        <span>📍</span>
+                        <span>Your Location</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="dashboard-card-content dashboard-space-y-6">
+                      <div>
+                        <label className="dashboard-label">
+                          Select your campus block:
+                        </label>
+                        <Select value={selectedBlock} onValueChange={setSelectedBlock}>
+                          <SelectTrigger className="custom-select h-12 text-base">
+                            <SelectValue placeholder="Choose your block" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border border-border shadow-lg">
+                            {blocks.map((block) => (
+                              <SelectItem
+                                key={block.id}
+                                value={block.id}
+                                className="select-item hover:bg-accent/10 cursor-pointer"
+                              >
+                                {block.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+        
+                      <Button
+                        onClick={handleLocationUpdate}
+                        disabled={isUpdatingLocation || !selectedBlock}
+                        className="dashboard-btn-primary"
                       >
-                        {block.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                onClick={handleLocationUpdate}
-                disabled={isUpdatingLocation || !selectedBlock}
-                className="dashboard-btn-primary"
-              >
-                {isUpdatingLocation ? 'Updating...' : 'Update Location'}
-              </Button>
-
-              {userData?.selectedBlock && (
-                <div className="dashboard-location-info">
-                  <p>
-                    <strong>Current location:</strong> {blocks.find(b => b.id === selectedBlock)?.name || selectedBlock}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                        {isUpdatingLocation ? 'Updating...' : 'Update Location'}
+                      </Button>
+        
+                      {userData?.selectedBlock && (
+                        <div className="dashboard-location-info">
+                          <p>
+                            <strong>Current location:</strong> {blocks.find(b => b.id === userData.selectedBlock)?.name || userData.selectedBlock}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+        
 
         {/* System Status */}
         <Card className="settings-card">
