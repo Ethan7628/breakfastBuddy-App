@@ -26,8 +26,11 @@ const Header = () => {
   // Detect if app is running in standalone mode (installed as PWA)
   useEffect(() => {
     const checkStandaloneMode = () => {
+      interface NavigatorWithStandalone extends Navigator {
+        standalone?: boolean;
+      }
       const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-                        (window.navigator as any).standalone || 
+                        (window.navigator as NavigatorWithStandalone).standalone || 
                         document.referrer.includes('android-app://');
       setIsStandalone(standalone);
     };
@@ -190,7 +193,7 @@ const Header = () => {
                 asChild
                 className="hover:bg-accent/10"
               >
-                <Link to="/login">Login</Link>
+                <Link to="/login" className='login-link'>Login</Link>
               </Button>
               <Button
                 asChild
