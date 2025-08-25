@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,31 +19,9 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [adminUnreadCount, setAdminUnreadCount] = useState(0);
-  const [isStandalone, setIsStandalone] = useState(false);
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Detect if app is running in standalone mode (installed as PWA)
-  useEffect(() => {
-    const checkStandaloneMode = () => {
-      interface NavigatorWithStandalone extends Navigator {
-        standalone?: boolean;
-      }
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-                        (window.navigator as NavigatorWithStandalone).standalone || 
-                        document.referrer.includes('android-app://');
-      setIsStandalone(standalone);
-    };
-
-    checkStandaloneMode();
-    
-    // Listen for display mode changes
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    mediaQuery.addEventListener('change', checkStandaloneMode);
-    
-    return () => mediaQuery.removeEventListener('change', checkStandaloneMode);
-  }, []);
 
   // Listen for unread messages for regular users
   useEffect(() => {
@@ -104,32 +83,30 @@ const Header = () => {
     { to: '/', label: 'Home', icon: Home },
     { to: '/menu', label: 'Menu', icon: null },
     ...(currentUser ? [{ to: '/orders', label: 'Orders', icon: null }] : []),
-    ...(userData?.isAdmin ? [{
-      to: '/admin',
-      label: 'Admin',
+    ...(userData?.isAdmin ? [{ 
+      to: '/admin', 
+      label: 'Admin', 
       icon: null,
-      badge: adminUnreadCount > 0 ? adminUnreadCount : null
+      badge: adminUnreadCount > 0 ? adminUnreadCount : null 
     }] : []),
-    ...(currentUser && !userData?.isAdmin ? [{
-      to: '/dashboard',
-      label: 'Dashboard',
+    ...(currentUser && !userData?.isAdmin ? [{ 
+      to: '/dashboard', 
+      label: 'Dashboard', 
       icon: null,
-      badge: unreadCount > 0 ? unreadCount : null
+      badge: unreadCount > 0 ? unreadCount : null 
     }] : []),
   ];
 
   return (
     <header className="header-root">
       <div className="header-inner">
-        {/* Logo - Show when not in standalone mode OR when in standalone mode on wide screens */}
-        {(!isStandalone || (isStandalone && window.innerWidth >= 1024)) && (
-          <Link
-            to="/"
-            className="header-logo-link"
-          >
-            <img src={logo} alt='logo' className="header-logo-img" />
-          </Link>
-        )}
+        {/* Logo */}
+        <Link
+          to="/"
+          className="header-logo-link"
+        >
+          <img src={logo} alt='logo' className="header-logo-img" />
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="header-nav">
@@ -153,7 +130,9 @@ const Header = () => {
         <div className="header-auth">
           {currentUser ? (
             <div className="header-auth-user">
-              
+              <span className="header-auth-welcome">
+                Welcome, {userData?.name || 'User'}!
+              </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -167,9 +146,9 @@ const Header = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-48 header-dropdown-content"
+                  className="w-48 bg-popover border border-border shadow-lg"
                 >
-                  <DropdownMenuItem
+                  <DropdownMenuItem 
                     onClick={handleSettingsClick}
                     className="flex items-center space-x-2 cursor-pointer hover:bg-accent/10"
                   >
@@ -193,7 +172,7 @@ const Header = () => {
                 asChild
                 className="hover:bg-accent/10"
               >
-                <Link to="/login" className='login-link'>Login</Link>
+                <Link to="/login">Login</Link>
               </Button>
               <Button
                 asChild
@@ -241,6 +220,9 @@ const Header = () => {
 
             {currentUser ? (
               <div className="header-mobile-auth">
+                <div className="px-4 py-2 text-sm font-medium text-muted-foreground">
+                  Welcome, {userData?.name || 'User'}!
+                </div>
                 <button
                   onClick={() => {
                     handleSettingsClick();

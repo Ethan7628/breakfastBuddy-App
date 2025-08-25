@@ -28,25 +28,27 @@ interface MenuItem {
 }
 
 const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
-  // Parallel API calls for much faster loading
-  const fetchPromises = Array.from({ length: 15 }, () => 
-    fetch('https://www.themealdb.com/api/json/v1/1/random.php').then(res => res.json())
-  );
+  const meals: MenuItem[] = [];
 
-  const responses = await Promise.all(fetchPromises);
-  
-  return responses.map((data, index) => {
+  for (let i = 0; i < 15; i++) {
+    const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
+    const data = await response.json();
     const meal: MealItem = data.meals[0];
-    return {
+
+    const menuItem: MenuItem = {
       id: meal.idMeal,
       name: meal.strMeal,
       description: meal.strInstructions.substring(0, 100) + '...',
-      price: Math.floor(Math.random() * 40000) + 10000,
+      price: Math.floor(Math.random() * 40000) + 10000, // UGX 10,000 - 50,000
       category: 'Breakfast Special',
       image: meal.strMealThumb,
       popular: Math.random() > 0.7
     };
-  });
+
+    meals.push(menuItem);
+  }
+
+  return meals;
 };
 
 const categories = ['All', 'Breakfast Special', 'Popular'];
@@ -61,10 +63,6 @@ const Menu = () => {
   const { data: menuItems = [], isLoading, error } = useQuery({
     queryKey: ['breakfast-meals'],
     queryFn: fetchBreakfastMeals,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    retry: 2,
   });
 
   // Load user's cart from Firestore
@@ -255,36 +253,10 @@ const Menu = () => {
 
   if (isLoading) {
     return (
-      <div className="menu-root">
-        <div className="menu-title">
-          <h1 className="text-breakfast-800">Breakfast Menu</h1>
-          <p className="text-breakfast-600">Loading delicious breakfast options...</p>
-        </div>
-        
-        <div className="menu-category-filter">
-          {categories.map((category) => (
-            <div key={category} className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
-          ))}
-        </div>
-        
-        <div className="menu-items-grid">
-          {Array.from({ length: 9 }).map((_, index) => (
-            <div key={index} className="border rounded-lg p-4 animate-pulse">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-20 h-20 bg-gray-200 rounded"></div>
-                <div className="w-16 h-6 bg-gray-200 rounded"></div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                <div className="flex justify-between items-center mt-4">
-                  <div className="h-6 bg-gray-200 rounded w-20"></div>
-                  <div className="h-8 bg-gray-200 rounded w-24"></div>
-                </div>
-              </div>
-            </div>
-          ))}
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-breakfast-600 mx-auto"></div>
+          <p className="mt-4 text-breakfast-700">Loading delicious breakfast options...</p>
         </div>
       </div>
     );
@@ -357,8 +329,6 @@ const Menu = () => {
                     src={item.image}
                     alt={item.name}
                     className="menu-item-img"
-                    loading="lazy"
-                    decoding="async"
                   />
                 </div>
                 {item.popular && (

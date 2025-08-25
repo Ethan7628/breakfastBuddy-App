@@ -103,6 +103,17 @@
     position: relative;
 }
 
+.index-section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    border-radius: 2px;
+}
 
 .index-features-grid {
     display: grid;
@@ -165,7 +176,7 @@
 }
 
 .index-cta-inner {
-    max-width: fit-content;
+    max-width: 672px;
     margin: 0 auto;
     text-align: center;
 }
@@ -178,7 +189,6 @@
 }
 
 .index-cta-desc {
-    max-width: 675px;
     font-size: 1.25rem;
     color: rgba(255, 255, 255, 0.9);
     margin-bottom: 2rem;
