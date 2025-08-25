@@ -8,20 +8,21 @@ import { registerSW } from 'virtual:pwa-register'
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element not found')
 
-// Register Service Worker with advanced options
+// Register Service Worker with advanced options and immediate updates
 const updateSW = registerSW({
+    immediate: true,
     onNeedRefresh() {
-        // Use a custom UI (e.g., Toast/Snackbar) instead of confirm()
-        if (window.confirm('New update available! Reload to get the latest features?')) {
-            updateSW(true) // Force reload
-        }
+        updateSW(true) // Auto-update for faster refresh
     },
     onOfflineReady() {
         console.log('App is now ready for offline use')
-        // Optional: Show "Ready for offline" notification
     },
     onRegistered(registration) {
         console.log('Service Worker registered:', registration)
+        // Check for updates every 30 seconds for faster updates
+        setInterval(() => {
+            registration?.update();
+        }, 30000);
     },
     onRegisterError(error) {
         console.error('SW registration failed:', error)
