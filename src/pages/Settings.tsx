@@ -3,13 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem
-} from '@/components/ui/select';
 import '../styles/Settings.css';
 
 const Settings = () => {
@@ -110,54 +103,41 @@ const Settings = () => {
         </Card>
 
         {/* Location Settings */}
-          <Card className="dashboard-card-elevated lg:col-span-1">
-                    <CardHeader className="dashboard-card-header">
-                      <CardTitle className="dashboard-card-title dashboard-card-title-lg">
-                        <span>📍</span>
-                        <span>Your Location</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="dashboard-card-content dashboard-space-y-6">
-                      <div>
-                        <label className="dashboard-label">
-                          Select your campus block:
-                        </label>
-                        <Select value={selectedBlock} onValueChange={setSelectedBlock}>
-                          <SelectTrigger className="custom-select h-12 text-base">
-                            <SelectValue placeholder="Choose your block" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border border-border shadow-lg">
-                            {blocks.map((block) => (
-                              <SelectItem
-                                key={block.id}
-                                value={block.id}
-                                className="select-item hover:bg-accent/10 cursor-pointer"
-                              >
-                                {block.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-        
-                      <Button
-                        onClick={handleLocationUpdate}
-                        disabled={isUpdatingLocation || !selectedBlock}
-                        className="dashboard-btn-primary"
-                      >
-                        {isUpdatingLocation ? 'Updating...' : 'Update Location'}
-                      </Button>
-        
-                      {userData?.selectedBlock && (
-                        <div className="dashboard-location-info">
-                          <p>
-                            <strong>Current location:</strong> {blocks.find(b => b.id === userData.selectedBlock)?.name || userData.selectedBlock}
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-        
+        <Card className="settings-card">
+          <CardHeader>
+            <CardTitle className="settings-card-title">
+              <span>📍</span>
+              Delivery Location
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="settings-form">
+              <div className="settings-form-group">
+                <label htmlFor="location">Select Your Block</label>
+                <select
+                  id="location"
+                  value={selectedBlock}
+                  onChange={(e) => setSelectedBlock(e.target.value)}
+                  className="w-full px-3 py-2 border border-breakfast-300 rounded-md focus:outline-none focus:ring-2 focus:ring-breakfast-500"
+                >
+                  <option value="">Choose your block...</option>
+                  {blocks.map((block) => (
+                    <option key={block.id} value={block.id}>
+                      {block.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                onClick={handleLocationUpdate}
+                disabled={isUpdatingLocation || !selectedBlock}
+                className="settings-btn w-full"
+              >
+                {isUpdatingLocation ? 'Updating...' : 'Update Location'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* System Status */}
         <Card className="settings-card">

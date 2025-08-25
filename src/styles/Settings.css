@@ -35,12 +35,11 @@
     display: grid;
     gap: 2rem;
     margin-bottom: 2rem;
-    grid-template-columns: 1fr;
 }
 
 @media (min-width: 768px) {
     .settings-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -203,26 +202,6 @@
 .settings-account-type-user {
     color: #059669;
     font-weight: 600;
-}
-
-.settings-select {
-    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%); /* Yellow gradient */
-    color: #7c4700;
-    border: 1px solid #ffd54f;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    transition: background 0.2s, color 0.2s;
-}
-
-.settings-select:focus {
-    outline: none;
-    border-color: #a0522d;
-    box-shadow: 0 0 0 2px #ffd54f44;
-}
-
-.settings-option {
-    color: #7c4700;
-    background: #fffbe6;
 }
 
 @media (max-width: 768px) {
