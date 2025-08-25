@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { playNotificationSound } from '@/utils/soundNotification';
 import { useAuth } from '@/contexts/AuthContext';
 import '../styles/Admin.css';
 
@@ -287,6 +288,20 @@ const Admin = () => {
             const updatedSortedChats = Object.values(updatedChatsByUser).sort((a, b) => {
               return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
             });
+
+            // Check for new user messages
+            const newUserMessages = updatedMessages.filter(msg => 
+              !msg.isFromAdmin && !msg.isRead && 
+              new Date(msg.createdAt).getTime() > Date.now() - 5000 // Last 5 seconds
+            );
+
+            if (newUserMessages.length > 0) {
+              playNotificationSound();
+              toast({
+                title: 'New message from User',
+                description: `You have ${newUserMessages.length} new message(s)`,
+              });
+            }
 
             setUserChats(updatedSortedChats);
           },

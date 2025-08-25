@@ -67,7 +67,6 @@
 
 .dashboard-card-header {
     padding: 1.5rem 1.5rem 1rem 1.5rem;
-    border-bottom: 1px solid #f3e8c2;
 }
 
 .dashboard-card-title {
@@ -220,6 +219,32 @@
     border-color: #ffeb3b;
     transform: translateY(-4px);
     box-shadow: 0 12px 24px rgba(255, 213, 79, 0.2);
+}
+
+.custom-select {
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%); /* Yellow gradient */
+    color: #7c4700;
+    border: 1px solid #ffd54f;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s;
+}
+
+.custom-select:focus {
+    outline: none;
+    border-color: #a0522d;
+    box-shadow: 0 0 0 2px #ffd54f44;
+}
+
+.bg-popover {
+    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%) !important;
+    border-radius: 0.5rem;
+    border: 1px solid #ffd54f;
+}
+
+.select-item {
+    color: #7c4700;
+    background: #fffbe6;
 }
 
 @media (max-width: 768px) {

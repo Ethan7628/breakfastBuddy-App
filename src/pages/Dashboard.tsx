@@ -384,7 +384,7 @@ const Dashboard = () => {
 
         <div className="dashboard-grid">
           {/* Location Selection */}
-          <Card className="dashboard-card-elevated lg:col-span-2">
+          <Card className="dashboard-card-elevated lg:col-span-1">
             <CardHeader className="dashboard-card-header">
               <CardTitle className="dashboard-card-title dashboard-card-title-lg">
                 <span>📍</span>
@@ -405,7 +405,7 @@ const Dashboard = () => {
                       <SelectItem
                         key={block.id}
                         value={block.id}
-                        className="hover:bg-accent/10 cursor-pointer"
+                        className="select-item hover:bg-accent/10 cursor-pointer"
                       >
                         {block.name}
                       </SelectItem>
