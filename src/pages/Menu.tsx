@@ -20,7 +20,7 @@ interface MealItem {
 interface MenuItem {
   id: string;
   name: string;
-  description: string;
+
   price: number;
   category: string;
   image: string;
@@ -38,7 +38,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
     const menuItem: MenuItem = {
       id: meal.idMeal,
       name: meal.strMeal,
-      description: meal.strInstructions.substring(0, 100) + '...',
+      
       price: Math.floor(Math.random() * 40000) + 10000, // UGX 10,000 - 50,000
       category: 'Breakfast Special',
       image: meal.strMealThumb,
@@ -336,12 +336,12 @@ const Menu = () => {
                 )}
               </div>
               <CardTitle className="menu-item-title text-breakfast-800">{item.name}</CardTitle>
-              <p className="menu-item-desc text-breakfast-600">{item.description}</p>
+           
             </CardHeader>
             <CardContent>
               <div className="menu-item-content">
                 <span className="menu-item-price text-breakfast-800 font-bold">
-                  UGX {item.price.toLocaleString()}
+                  UG Shs {item.price.toLocaleString()}
                 </span>
                 <div className="menu-item-actions">
                   {cart[item.id] > 0 && (
