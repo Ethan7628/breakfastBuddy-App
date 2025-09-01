@@ -206,7 +206,8 @@ const Menu = () => {
           name: item?.name || 'Unknown Item',
           price: item?.price || 0,
           quantity,
-          total: (item?.price || 0) * quantity
+          total: (item?.price || 0) * quantity,
+          image: item?.image || ''
         };
       });
 
