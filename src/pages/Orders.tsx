@@ -12,6 +12,7 @@ interface OrderItem {
   price: number;
   quantity: number;
   total: number;
+  image?: string;
 }
 
 interface Order {
@@ -152,15 +153,31 @@ const Orders = () => {
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-semibold text-breakfast-800 mb-2">Items:</h4>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {order.items.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="text-breakfast-700">
-                            {item.quantity}x {item.name}
-                          </span>
-                          <span className="text-breakfast-800 font-semibold">
-                            UGX {item.total.toLocaleString()}
-                          </span>
+                        <div key={index} className="flex items-center gap-3 p-3 bg-breakfast-50 rounded-lg border border-breakfast-100">
+                          {item.image && (
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-breakfast-800 font-medium">
+                                  {item.name}
+                                </span>
+                                <p className="text-breakfast-600 text-sm">
+                                  Quantity: {item.quantity}
+                                </p>
+                              </div>
+                              <span className="text-breakfast-800 font-semibold">
+                                UGX {item.total.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
