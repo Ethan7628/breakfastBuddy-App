@@ -377,7 +377,7 @@ const Menu = () => {
 
       {/* Item Detail Modal */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-2xl bg-background border border-breakfast-200">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedItem && (
             <>
               <DialogHeader>
