@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { addToUserCart, getUserCart, CartItem } from '@/lib/firebase';
@@ -20,7 +21,7 @@ interface MealItem {
 interface MenuItem {
   id: string;
   name: string;
-
+  description: string;
   price: number;
   category: string;
   image: string;
@@ -38,7 +39,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
     const menuItem: MenuItem = {
       id: meal.idMeal,
       name: meal.strMeal,
-      
+      description: meal.strInstructions,
       price: Math.floor(Math.random() * 40000) + 10000, // UGX 10,000 - 50,000
       category: 'Breakfast Special',
       image: meal.strMealThumb,
@@ -59,6 +60,7 @@ const Menu = () => {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   const { data: menuItems = [], isLoading, error } = useQuery({
     queryKey: ['breakfast-meals'],
@@ -93,7 +95,12 @@ const Menu = () => {
       ? menuItems.filter(item => item.popular)
       : menuItems.filter(item => item.category === selectedCategory);
 
-  const addToCart = async (itemId: string) => {
+  const addToCart = async (itemId: string, event?: React.MouseEvent) => {
+    // Prevent card click event from firing
+    if (event) {
+      event.stopPropagation();
+    }
+    
     if (!currentUser) {
       toast({
         title: 'Please login to add items',
@@ -321,7 +328,11 @@ const Menu = () => {
       {/* Menu Items */}
       <div className="menu-items-grid">
         {filteredItems.map((item) => (
-          <Card key={item.id} className="menu-item-card border-breakfast-200">
+          <Card 
+            key={item.id} 
+            className="menu-item-card border-breakfast-200 cursor-pointer"
+            onClick={() => setSelectedItem(item)}
+          >
             <CardHeader>
               <div className="menu-item-header">
                 <div className="menu-item-img-wrap">
@@ -350,7 +361,7 @@ const Menu = () => {
                     </span>
                   )}
                   <Button
-                    onClick={() => addToCart(item.id)}
+                    onClick={(e) => addToCart(item.id, e)}
                     size="sm"
                     className="breakfast-gradient text-white"
                     disabled={isAddingToCart === item.id}
@@ -363,6 +374,68 @@ const Menu = () => {
           </Card>
         ))}
       </div>
+
+      {/* Item Detail Modal */}
+      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedItem && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-breakfast-800 text-xl font-bold">
+                  {selectedItem.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="relative">
+                  <img
+                    src={selectedItem.image}
+                    alt={selectedItem.name}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                  {selectedItem.popular && (
+                    <span className="absolute top-3 right-3 bg-breakfast-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                      Popular
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-2xl font-bold text-breakfast-800">
+                    UG Shs {selectedItem.price.toLocaleString()}
+                  </span>
+                  <span className="text-sm text-breakfast-600 bg-breakfast-100 px-3 py-1 rounded-full">
+                    {selectedItem.category}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-breakfast-800 mb-2">Description</h3>
+                  <p className="text-breakfast-600 leading-relaxed">
+                    {selectedItem.description}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-breakfast-200">
+                  <div className="flex items-center gap-3">
+                    {cart[selectedItem.id] > 0 && (
+                      <span className="text-breakfast-600 bg-breakfast-100 px-3 py-1 rounded-full text-sm">
+                        {cart[selectedItem.id]} in cart
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    onClick={(e) => addToCart(selectedItem.id, e)}
+                    className="breakfast-gradient text-white px-6"
+                    disabled={isAddingToCart === selectedItem.id}
+                  >
+                    {isAddingToCart === selectedItem.id ? 'Adding...' : 'Add to Cart'}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
