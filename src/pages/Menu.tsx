@@ -394,7 +394,7 @@ const Menu = () => {
                     className="w-full h-64 object-cover rounded-lg"
                   />
                   {selectedItem.popular && (
-                    <span className="absolute top-3 right-3 bg-breakfast-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    <span className="absolute top-3 right-3 bg-amber-300 text-white px-3 py-1 rounded-full text-sm font-medium">
                       Popular
                     </span>
                   )}
