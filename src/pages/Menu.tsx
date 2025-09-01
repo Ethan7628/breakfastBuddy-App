@@ -377,7 +377,7 @@ const Menu = () => {
 
       {/* Item Detail Modal */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden bg-amber-50">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden bg-amber-50">
           {selectedItem && (
             <div className="flex flex-col h-full overflow-hidden">
               <DialogHeader className="shrink-0">
