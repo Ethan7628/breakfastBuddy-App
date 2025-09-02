@@ -84,11 +84,17 @@ export const getUserCart = async (userId: string): Promise<CartItem[]> => {
     collection(db, 'userCarts'),
     where('userId', '==', userId)
   );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ 
-    id: doc.id, 
-    ...doc.data() 
-  } as CartItem));
+  
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data() 
+    } as CartItem));
+  } catch (error) {
+    console.error('Error fetching user cart:', error);
+    throw error;
+  }
 };
 
 export const addToUserCart = async (userId: string, itemId: string, itemData: { name: string; price: number }) => {
