@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { registerSW } from 'virtual:pwa-register'
+import { initPerformanceObserver, preloadCriticalResources } from './utils/performance'
+import { persistentCache } from './utils/cache'
 
 // Type-safe root element check
 const rootElement = document.getElementById('root')
@@ -27,6 +29,13 @@ const updateSW = registerSW({
         console.error('SW registration failed:', error)
     }
 })
+
+// Initialize performance monitoring and optimizations
+initPerformanceObserver();
+preloadCriticalResources();
+
+// Initialize persistent cache
+persistentCache.init().catch(console.error);
 
 // Render the app
 createRoot(rootElement).render(

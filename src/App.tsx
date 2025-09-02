@@ -10,17 +10,53 @@ import AuthRoute from "@/components/AuthRoute";
 import AdminRoute from "@/components/AdminRoute";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import Menu from "./pages/Menu";
-import Admin from "./pages/Admin";
-import NotFound from "./pages/NotFound";
-import Settings from "./pages/Settings";
-import Orders from "./pages/Orders";
+import { Suspense, lazy } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-const queryClient = new QueryClient();
+// Lazy load components for better performance
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));  
+const Signup = lazy(() => import("./pages/Signup"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Menu = lazy(() => import("./pages/Menu"));
+const Admin = lazy(() => import("./pages/Admin"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Orders = lazy(() => import("./pages/Orders"));
+
+// Loading component for suspense
+const PageSkeleton = () => (
+  <div className="min-h-screen p-6">
+    <div className="max-w-4xl mx-auto space-y-4">
+      <Skeleton className="h-8 w-1/3" />
+      <Skeleton className="h-4 w-2/3" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="space-y-3">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000,   // 10 minutes  
+      retry: 3,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 // Layout component that includes Header and Footer
 const Layout = () => {
@@ -65,33 +101,35 @@ const Layout = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Index />} />
-              <Route path="login" element={<Login />} />
-              <Route path="signup" element={<Signup />} />
-              <Route element={<AuthRoute />}>
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="menu" element={<Menu />} />
-                <Route path="orders" element={<Orders />} />
-                <Route path="settings" element={<Settings />} />
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Suspense fallback={<PageSkeleton />}><Index /></Suspense>} />
+                <Route path="login" element={<Suspense fallback={<PageSkeleton />}><Login /></Suspense>} />
+                <Route path="signup" element={<Suspense fallback={<PageSkeleton />}><Signup /></Suspense>} />
+                <Route element={<AuthRoute />}>
+                  <Route path="dashboard" element={<Suspense fallback={<PageSkeleton />}><Dashboard /></Suspense>} />
+                  <Route path="menu" element={<Suspense fallback={<PageSkeleton />}><Menu /></Suspense>} />
+                  <Route path="orders" element={<Suspense fallback={<PageSkeleton />}><Orders /></Suspense>} />
+                  <Route path="settings" element={<Suspense fallback={<PageSkeleton />}><Settings /></Suspense>} />
+                </Route>
+                <Route element={<AdminRoute />}>
+                  <Route path="admin" element={<Suspense fallback={<PageSkeleton />}><Admin /></Suspense>} />
+                </Route>
+                <Route path="*" element={<Suspense fallback={<PageSkeleton />}><NotFound /></Suspense>} />
               </Route>
-              <Route element={<AdminRoute />}>
-                <Route path="admin" element={<Admin />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
