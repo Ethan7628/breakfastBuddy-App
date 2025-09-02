@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, orderBy, onSnapshot } from 'firebase/firestore';
@@ -442,10 +443,19 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="dashboard-card-content dashboard-space-y-4">
               {loading ? (
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-8" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
                 </div>
               ) : (
                 <>
@@ -509,9 +519,16 @@ const Dashboard = () => {
               {/* Chat Messages Display */}
               <div className="max-h-80 overflow-y-auto bg-gray-50 rounded-lg p-4 space-y-3 border">
                 {chatLoading && !chatError ? (
-                  <div className="text-center text-gray-500 py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-breakfast-500 mx-auto mb-2"></div>
-                    Loading chat messages...
+                  <div className="space-y-3">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+                        <div className="max-w-xs space-y-2">
+                          <Skeleton className="h-3 w-12" />
+                          <Skeleton className={`h-16 ${i % 2 === 0 ? 'w-48' : 'w-40'} rounded-lg`} />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : chatMessages.length === 0 && !chatError ? (
                   <div className="text-center text-gray-500 py-8">
