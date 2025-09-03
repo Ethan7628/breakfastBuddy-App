@@ -128,13 +128,19 @@ export const removeFromUserCart = async (userId: string, itemId: string) => {
     );
     
     const snapshot = await getDocs(q);
+    console.log('Found documents to remove:', snapshot.docs.length);
     
     if (!snapshot.empty) {
       // Remove one item (first found)
       const docToDelete = snapshot.docs[0];
+      console.log('Deleting document with ID:', docToDelete.id);
+      console.log('Document data:', docToDelete.data());
+      
       await deleteDoc(doc(db, 'userCarts', docToDelete.id));
       console.log('Successfully removed item from cart');
       return true;
+    } else {
+      console.log('No matching documents found to delete');
     }
     
     return false;
