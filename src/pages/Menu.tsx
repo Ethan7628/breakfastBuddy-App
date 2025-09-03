@@ -159,29 +159,47 @@ const Menu = () => {
       event.stopPropagation();
     }
 
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('No current user, cannot remove from cart');
+      return;
+    }
 
     const item = menuItems.find(i => i.id === itemId);
-    if (!item) return;
+    if (!item) {
+      console.log('Item not found:', itemId);
+      return;
+    }
+
+    console.log('Starting removeFromCart process:', { itemId, userUid: currentUser.uid });
 
     try {
-      await removeFromUserCart(currentUser.uid, itemId);
+      const success = await removeFromUserCart(currentUser.uid, itemId);
+      
+      if (success) {
+        // Update local state
+        setCart(prev => {
+          const newCart = { ...prev };
+          if (newCart[itemId] > 1) {
+            newCart[itemId] -= 1;
+          } else {
+            delete newCart[itemId];
+          }
+          console.log('Updated local cart state:', newCart);
+          return newCart;
+        });
 
-      // Update local state
-      setCart(prev => {
-        const newCart = { ...prev };
-        if (newCart[itemId] > 1) {
-          newCart[itemId] -= 1;
-        } else {
-          delete newCart[itemId];
-        }
-        return newCart;
-      });
-
-      toast({
-        title: 'Removed from cart',
-        description: `${item.name} has been removed from your cart`
-      });
+        toast({
+          title: 'Removed from cart',
+          description: `${item.name} has been removed from your cart`
+        });
+      } else {
+        console.log('Remove operation returned false');
+        toast({
+          title: 'Item not found in cart',
+          description: 'The item may have already been removed',
+          variant: 'destructive'
+        });
+      }
     } catch (error) {
       console.error('Error removing from cart:', error);
       toast({
