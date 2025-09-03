@@ -209,7 +209,7 @@ const Settings = () => {
               </div>
               <div className="settings-info-item">
                 <span className="settings-info-label">Last Update</span>
-                <span className="settings-info-value">January 2025</span>
+                <span className="settings-info-value">September 2025</span>
               </div>
               <div className="settings-info-item">
                 <span className="settings-info-label">Build Number</span>
