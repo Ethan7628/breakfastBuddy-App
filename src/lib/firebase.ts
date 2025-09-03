@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import {
   collection, getDocs, addDoc, doc, setDoc,
-  query, where, onSnapshot
+  query, where, onSnapshot, deleteDoc
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -132,7 +132,6 @@ export const removeFromUserCart = async (userId: string, itemId: string) => {
     if (!snapshot.empty) {
       // Remove one item (first found)
       const docToDelete = snapshot.docs[0];
-      const { deleteDoc } = await import('firebase/firestore');
       await deleteDoc(doc(db, 'userCarts', docToDelete.id));
       console.log('Successfully removed item from cart');
       return true;
