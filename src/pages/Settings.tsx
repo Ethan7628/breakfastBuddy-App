@@ -10,6 +10,7 @@ import {
   SelectContent,
   SelectItem
 } from '@/components/ui/select';
+import '../styles/Dashboard.css';
 import '../styles/Settings.css';
 
 const Settings = () => {
