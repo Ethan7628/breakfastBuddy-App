@@ -117,6 +117,34 @@ export const addToUserCart = async (userId: string, itemId: string, itemData: { 
   }
 };
 
+export const removeFromUserCart = async (userId: string, itemId: string) => {
+  console.log('Removing from cart:', { userId, itemId });
+  
+  try {
+    const q = query(
+      collection(db, 'userCarts'),
+      where('userId', '==', userId),
+      where('itemId', '==', itemId)
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    if (!snapshot.empty) {
+      // Remove one item (first found)
+      const docToDelete = snapshot.docs[0];
+      const { deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'userCarts', docToDelete.id));
+      console.log('Successfully removed item from cart');
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error removing from cart:', error);
+    throw error;
+  }
+};
+
 export const getAllCarts = async (): Promise<CartItem[]> => {
   const snapshot = await getDocs(collection(db, 'userCarts'));
   return snapshot.docs.map(doc => ({ 

@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { addToUserCart, getUserCart, CartItem } from '@/lib/firebase';
+import { addToUserCart, getUserCart, removeFromUserCart, CartItem } from '@/lib/firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import '../styles/Menu.css';
@@ -151,6 +151,44 @@ const Menu = () => {
       });
     } finally {
       setIsAddingToCart(null);
+    }
+  };
+
+  const removeFromCart = async (itemId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    if (!currentUser) return;
+
+    const item = menuItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    try {
+      await removeFromUserCart(currentUser.uid, itemId);
+
+      // Update local state
+      setCart(prev => {
+        const newCart = { ...prev };
+        if (newCart[itemId] > 1) {
+          newCart[itemId] -= 1;
+        } else {
+          delete newCart[itemId];
+        }
+        return newCart;
+      });
+
+      toast({
+        title: 'Removed from cart',
+        description: `${item.name} has been removed from your cart`
+      });
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      toast({
+        title: 'Failed to remove from cart',
+        description: 'Please try again',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -357,9 +395,19 @@ const Menu = () => {
                 </span>
                 <div className="menu-item-actions">
                   {cart[item.id] > 0 && (
-                    <span className="menu-item-incart text-breakfast-600">
-                      {cart[item.id]} in cart
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="menu-item-incart text-breakfast-600">
+                        {cart[item.id]} in cart
+                      </span>
+                      <Button
+                        onClick={(e) => removeFromCart(item.id, e)}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   )}
                   <Button
                     onClick={(e) => addToCart(item.id, e)}
@@ -421,9 +469,19 @@ const Menu = () => {
               <div className="shrink-0 flex items-center justify-between pt-4 border-t border-breakfast-200 mt-4">
                 <div className="flex items-center gap-3">
                   {cart[selectedItem.id] > 0 && (
-                    <span className="text-breakfast-600 bg-breakfast-100 px-3 py-1 rounded-full text-sm">
-                      {cart[selectedItem.id]} in cart
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-breakfast-600 bg-breakfast-100 px-3 py-1 rounded-full text-sm">
+                        {cart[selectedItem.id]} in cart
+                      </span>
+                      <Button
+                        onClick={(e) => removeFromCart(selectedItem.id, e)}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <Button
