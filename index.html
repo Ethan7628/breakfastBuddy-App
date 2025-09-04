@@ -5,6 +5,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BreakFast Buddy</title>
+  
+  <!-- Resource hints to reduce critical request chain -->
+  <link rel="modulepreload" href="/src/main.tsx" />
+  <link rel="preload" href="/src/index.css" as="style" />
+  
+  <!-- Preconnect to improve connection timing -->
+  <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  
+  <!-- Critical CSS inlined to prevent render blocking -->
+  <style>
+    /* Critical above-the-fold styles */
+    #root { min-height: 100vh; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
 </head>
 
 <body>
