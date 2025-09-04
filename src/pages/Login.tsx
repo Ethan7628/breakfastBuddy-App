@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { ResponsiveLogo } from '../components/ResponsiveLogo';
+import logo from "../images/logo.png";
 import '../styles/Login.css';
 
 const Login = () => {
@@ -74,7 +74,7 @@ const Login = () => {
       <Card className="login-card">
         <CardHeader className="login-header">
           <div className="login-logo-wrap">
-            <ResponsiveLogo size="medium" className="login-logo" />
+            <img src={logo} alt="logo" className="login-logo" />
           </div>
           <CardTitle className="login-title">Welcome Back</CardTitle>
           <p className="login-desc">Sign in to your Breakfast Buddy account</p>
