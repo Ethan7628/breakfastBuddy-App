@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ResponsiveLogo } from '../components/ResponsiveLogo';
+import logo from "../images/logo.png";
 import '../styles/Index.css';
 
 const Index = () => {
@@ -15,7 +15,7 @@ const Index = () => {
         <div className="index-hero-inner">
           <div className="index-hero-logo-wrap">
             <div className="index-hero-logo-bg">
-              <ResponsiveLogo size="large" className="index-hero-logo" />
+              <img src={logo} alt="Breakfast Buddy Logo" className="index-hero-logo" />
             </div>
             <p className="index-hero-desc">
               Your perfect breakfast companion. Order delicious morning meals delivered fresh to your campus location.

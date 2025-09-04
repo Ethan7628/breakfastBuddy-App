@@ -115,8 +115,7 @@ export const preloadCriticalResources = () => {
   
   // Preload critical images
   const criticalImages = [
-    '/src/images/logo-512.webp',
-    '/src/images/logo-1024.webp',
+    '/images/logo.png',
     '/images/placeholder.svg'
   ];
   

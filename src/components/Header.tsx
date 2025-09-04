@@ -11,7 +11,7 @@ import {
 import { Menu, X, User, LogOut, Settings, Home } from 'lucide-react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { ResponsiveLogo } from './ResponsiveLogo';
+import logo from "../images/logo.png"
 import '../styles/Header.css';
 
 const Header = () => {
@@ -127,7 +127,7 @@ const Header = () => {
             to="/"
             className="header-logo-link"
           >
-            <ResponsiveLogo size="small" className="header-logo-img" />
+            <img src={logo} alt='logo' className="header-logo-img" />
           </Link>
         )}
 

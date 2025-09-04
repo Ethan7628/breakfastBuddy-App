@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { ResponsiveLogo } from '../components/ResponsiveLogo';
+import logo from "../images/logo.png";
 import '../styles/Signup.css';
 
 const Signup = () => {
@@ -64,7 +64,7 @@ const Signup = () => {
     <Card className="signup-card">
       <CardHeader className="signup-card-header">
         <div className="signup-logo-container">
-          <ResponsiveLogo size="small" className="signup-logo-img" />
+          <img src={logo} alt="logo" className="signup-logo-img" />
         </div>
         <CardTitle className="signup-title">Join Breakfast Buddy</CardTitle>
         <p className="signup-subtitle">Create your account to get started</p>
