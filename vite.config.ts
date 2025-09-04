@@ -4,6 +4,33 @@ import path from "path";
 // import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Plugin to inject resource hints for critical request chain optimization
+const resourceHintsPlugin = () => {
+  return {
+    name: 'resource-hints',
+    transformIndexHtml(html: string, context: any) {
+      if (context.bundle) {
+        const chunks = Object.values(context.bundle) as any[];
+        const entryChunk = chunks.find((chunk: any) => chunk.isEntry && chunk.fileName);
+        const cssChunk = chunks.find((chunk: any) => chunk.fileName?.endsWith('.css'));
+        
+        let resourceHints = '';
+        
+        if (entryChunk && entryChunk.fileName) {
+          resourceHints += `<link rel="modulepreload" href="/${entryChunk.fileName}" />`;
+        }
+        
+        if (cssChunk && cssChunk.fileName) {
+          resourceHints += `<link rel="preload" href="/${cssChunk.fileName}" as="style" />`;
+        }
+        
+        return html.replace('<head>', `<head>${resourceHints}`);
+      }
+      return html;
+    }
+  };
+};
+
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -11,6 +38,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    resourceHintsPlugin(),
   // mode === 'development' && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
