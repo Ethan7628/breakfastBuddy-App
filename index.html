@@ -8,7 +8,8 @@
   
   <!-- Resource hints to reduce critical request chain -->
   <link rel="modulepreload" href="/src/main.tsx" />
-  <link rel="preload" href="/src/index.css" as="style" />
+  <link rel="preload" href="/src/index.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
   
   <!-- Preload critical LCP images -->
   <link rel="preload" href="/src/images/hero-background.webp" as="image" type="image/webp" />
