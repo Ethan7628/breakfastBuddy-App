@@ -10,6 +10,10 @@
   <link rel="modulepreload" href="/src/main.tsx" />
   <link rel="preload" href="/src/index.css" as="style" />
   
+  <!-- Preload critical LCP images -->
+  <link rel="preload" href="/src/images/hero-background.webp" as="image" type="image/webp" />
+  <link rel="preload" href="/src/images/logo.webp" as="image" type="image/webp" />
+  
   <!-- Preconnect to improve connection timing -->
   <link rel="dns-prefetch" href="//fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
@@ -19,6 +23,25 @@
     /* Critical above-the-fold styles */
     #root { min-height: 100vh; }
     body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    
+    /* Critical hero section styles for LCP optimization */
+    .index-hero-section {
+      position: relative;
+      padding: 6rem 1rem 8rem 1rem;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+    }
+    
+    .index-hero-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      text-align: center;
+    }
   </style>
 </head>
 
