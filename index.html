@@ -7,9 +7,13 @@
   <title>BreakFast Buddy</title>
   
   <!-- Resource hints to reduce critical request chain -->
-  <link rel="modulepreload" href="/src/main.tsx" />
-  <link rel="preload" href="/src/index.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <link rel="modulepreload" href="/src/main.tsx" fetchpriority="high" />
+  <link rel="preload" href="/src/index.css" as="style" fetchpriority="high" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
+  
+  <!-- Preload critical JavaScript chunks -->
+  <link rel="modulepreload" href="/src/App.tsx" />
+  <link rel="modulepreload" href="/src/pages/Index.tsx" />
   
   <!-- Preload critical LCP images -->
   <link rel="preload" href="/src/images/pexels-chudesabyvaut-1351350-2612340.jpg" as="image" type="image/jpeg" />
