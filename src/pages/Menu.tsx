@@ -9,6 +9,8 @@ import { useQuery } from '@tanstack/react-query';
 import { addToUserCart, getUserCart, removeFromUserCart, CartItem } from '@/lib/firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { PaymentDialog } from '@/components/PaymentDialog';
+import { playNotificationSound } from '@/utils/soundNotification';
 import '../styles/Menu.css';
 
 interface MealItem {
@@ -61,6 +63,7 @@ const Menu = () => {
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const { data: menuItems = [], isLoading, error } = useQuery({
     queryKey: ['breakfast-meals'],
@@ -234,11 +237,21 @@ const Menu = () => {
   };
 
   const handleCheckout = async () => {
-    if (!currentUser || Object.keys(cart).length === 0) {
+    if (!currentUser) {
       toast({
-        title: 'Cart is empty',
-        description: 'Please add items to your cart before checkout',
-        variant: 'destructive'
+        title: "Please log in",
+        description: "You need to be logged in to place an order.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const totalItems = getTotalItems();
+    if (totalItems === 0) {
+      toast({
+        title: "Empty cart",
+        description: "Please add items to your cart before checking out.",
+        variant: "destructive"
       });
       return;
     }
@@ -252,55 +265,26 @@ const Menu = () => {
       return;
     }
 
-    setIsCheckingOut(true);
+    // Open payment dialog instead of directly processing order
+    setIsPaymentDialogOpen(true);
+  };
 
+  const handlePaymentSuccess = async () => {
     try {
-      const orderItems = Object.entries(cart).map(([itemId, quantity]) => {
-        const item = menuItems.find(i => i.id === itemId);
-        return {
-          itemId,
-          name: item?.name || 'Unknown Item',
-          price: item?.price || 0,
-          quantity,
-          total: (item?.price || 0) * quantity,
-          image: item?.image || ''
-        };
-      });
-
-      const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
-
-      // Create order in Firestore
-      await addDoc(collection(db, 'orders'), {
-        userId: currentUser.uid,
-        userEmail: userData?.email || currentUser.email,
-        userName: userData?.name || 'Unknown User',
-        items: orderItems,
-        totalAmount,
-        status: 'pending',
-        deliveryLocation: userData?.selectedBlock || 'Not specified',
-        createdAt: new Date().toISOString()
-      });
-
-      // Clear cart from Firestore
+      // Clear cart from Firebase after successful payment
       await clearUserCart();
-
-      // Clear local cart state
       setCart({});
 
+      // Show success message
       toast({
-        title: 'Order placed successfully!',
-        description: `Your order of UGX ${totalAmount.toLocaleString()} has been submitted for delivery to ${userData?.selectedBlock || 'your location'}.`
+        title: "Order placed successfully!",
+        description: `Your order of ${getTotalItems()} items has been placed and paid for. Delivery to ${userData?.selectedBlock || 'your location'}.`,
       });
 
+      // Play notification sound
+      playNotificationSound();
     } catch (error) {
-      console.error('Error processing checkout:', error);
-      toast({
-        title: 'Checkout failed',
-        description: 'Please try again',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsCheckingOut(false);
+      console.error("Error clearing cart:", error);
     }
   };
 
@@ -514,6 +498,14 @@ const Menu = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <PaymentDialog
+        isOpen={isPaymentDialogOpen}
+        onClose={() => setIsPaymentDialogOpen(false)}
+        cartItems={cart}
+        totalAmount={getTotalPrice()}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 };
