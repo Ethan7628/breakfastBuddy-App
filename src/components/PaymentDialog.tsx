@@ -112,7 +112,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md  bg-amber-50">
         <DialogHeader>
           <DialogTitle>Choose Payment Method</DialogTitle>
         </DialogHeader>

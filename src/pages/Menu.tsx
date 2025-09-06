@@ -33,7 +33,7 @@ interface MenuItem {
 const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
   const meals: MenuItem[] = [];
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 18; i++) {
     const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
     const data = await response.json();
     const meal: MealItem = data.meals[0];
@@ -42,7 +42,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
       id: meal.idMeal,
       name: meal.strMeal,
       description: meal.strInstructions,
-      price: Math.floor(Math.random() * 40000) + 10000, // UGX 10,000 - 50,000
+      price: Math.floor(Math.random() * 21000) + 9000, // UGX 9,000 - 30,000
       category: 'Breakfast Special',
       image: meal.strMealThumb,
       popular: Math.random() > 0.7
