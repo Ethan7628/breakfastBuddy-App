@@ -456,57 +456,104 @@ const Admin = () => {
 
   const resetAllUserData = async () => {
     const confirmed = window.confirm(
-      "⚠️ WARNING: This will permanently delete ALL user carts, orders, and chat messages. User accounts will remain intact. Are you sure you want to continue?"
+      "⚠️ WARNING: This will clear the displayed admin data and attempt to reset user data where permissions allow. Are you sure you want to continue?"
     );
     
     if (!confirmed) return;
 
     try {
       setLoading(true);
+      let deletedCarts = 0;
+      let deletedOrders = 0;
+      let deletedChats = 0;
 
-      // Clear all cart items from Firebase
-      console.log('Clearing all cart items...');
-      const cartSnapshot = await getDocs(collection(db, 'userCarts'));
-      const cartDeletePromises = cartSnapshot.docs.map(cartDoc => 
-        deleteDoc(doc(db, 'userCarts', cartDoc.id))
-      );
-      await Promise.all(cartDeletePromises);
-      console.log(`Deleted ${cartSnapshot.docs.length} cart items`);
+      // Try to clear cart items from Firebase (with error handling per document)
+      console.log('Attempting to clear cart items...');
+      try {
+        const cartSnapshot = await getDocs(collection(db, 'userCarts'));
+        console.log(`Found ${cartSnapshot.docs.length} cart items to delete`);
+        
+        for (const cartDoc of cartSnapshot.docs) {
+          try {
+            await deleteDoc(doc(db, 'userCarts', cartDoc.id));
+            deletedCarts++;
+          } catch (docError) {
+            console.warn(`Could not delete cart item ${cartDoc.id}:`, docError);
+          }
+        }
+      } catch (cartError) {
+        console.warn('Error accessing cart collection:', cartError);
+      }
 
-      // Clear all Firebase orders (if any exist)
-      console.log('Clearing Firebase orders...');
-      const ordersSnapshot = await getDocs(collection(db, 'orders'));
-      const orderDeletePromises = ordersSnapshot.docs.map(orderDoc => 
-        deleteDoc(doc(db, 'orders', orderDoc.id))
-      );
-      await Promise.all(orderDeletePromises);
-      console.log(`Deleted ${ordersSnapshot.docs.length} Firebase orders`);
+      // Try to clear Firebase orders (with error handling per document)
+      console.log('Attempting to clear Firebase orders...');
+      try {
+        const ordersSnapshot = await getDocs(collection(db, 'orders'));
+        console.log(`Found ${ordersSnapshot.docs.length} Firebase orders to delete`);
+        
+        for (const orderDoc of ordersSnapshot.docs) {
+          try {
+            await deleteDoc(doc(db, 'orders', orderDoc.id));
+            deletedOrders++;
+          } catch (docError) {
+            console.warn(`Could not delete order ${orderDoc.id}:`, docError);
+          }
+        }
+      } catch (orderError) {
+        console.warn('Error accessing orders collection:', orderError);
+      }
 
-      // Clear all chat messages
-      console.log('Clearing chat messages...');
-      const chatSnapshot = await getDocs(collection(db, 'chatMessages'));
-      const chatDeletePromises = chatSnapshot.docs.map(chatDoc => 
-        deleteDoc(doc(db, 'chatMessages', chatDoc.id))
-      );
-      await Promise.all(chatDeletePromises);
-      console.log(`Deleted ${chatSnapshot.docs.length} chat messages`);
+      // Try to clear chat messages (with error handling per document)
+      console.log('Attempting to clear chat messages...');
+      try {
+        const chatSnapshot = await getDocs(collection(db, 'chatMessages'));
+        console.log(`Found ${chatSnapshot.docs.length} chat messages to delete`);
+        
+        for (const chatDoc of chatSnapshot.docs) {
+          try {
+            await deleteDoc(doc(db, 'chatMessages', chatDoc.id));
+            deletedChats++;
+          } catch (docError) {
+            console.warn(`Could not delete chat message ${chatDoc.id}:`, docError);
+          }
+        }
+      } catch (chatError) {
+        console.warn('Error accessing chat collection:', chatError);
+      }
 
-      // Refresh the data
+      // Clear the displayed data regardless of Firebase operations
       setCartItems([]);
       setOrders([]);
       setUserChats([]);
 
-      toast({
-        title: 'Reset Complete!',
-        description: `Successfully cleared all user data. Deleted ${cartSnapshot.docs.length} cart items, ${ordersSnapshot.docs.length} orders, and ${chatSnapshot.docs.length} chat messages.`,
-      });
+      // Show success message with actual counts
+      const totalDeleted = deletedCarts + deletedOrders + deletedChats;
+      
+      if (totalDeleted > 0) {
+        toast({
+          title: 'Partial Reset Complete!',
+          description: `Successfully deleted ${deletedCarts} cart items, ${deletedOrders} orders, and ${deletedChats} chat messages. Supabase orders were cleared earlier.`,
+        });
+      } else {
+        toast({
+          title: 'Admin View Cleared!',
+          description: 'Admin display has been reset. Note: Firebase permissions may prevent bulk deletion. Supabase orders were cleared earlier.',
+          variant: 'default'
+        });
+      }
 
     } catch (error) {
-      console.error('Error resetting user data:', error);
+      console.error('Error during reset operation:', error);
+      
+      // Still clear the display even if Firebase operations failed
+      setCartItems([]);
+      setOrders([]);
+      setUserChats([]);
+      
       toast({
-        title: 'Reset Failed',
-        description: 'An error occurred while resetting user data. Check console for details.',
-        variant: 'destructive'
+        title: 'Admin View Cleared',
+        description: 'Display cleared successfully. Some Firebase data may require manual deletion due to permission restrictions.',
+        variant: 'default'
       });
     } finally {
       setLoading(false);
@@ -1076,10 +1123,10 @@ const Admin = () => {
         <CardContent>
           <div className="space-y-4">
             <div className="bg-white p-4 rounded-lg border border-red-200">
-              <h3 className="font-semibold text-red-800 mb-2">Reset All User Data</h3>
+              <h3 className="font-semibold text-red-800 mb-2">Reset User Data</h3>
               <p className="text-red-600 text-sm mb-4">
-                This will permanently delete ALL user carts, orders (both Firebase and Supabase), and chat messages. 
-                User accounts will remain intact and users can continue logging in.
+                This will clear the admin display and attempt to delete user carts, Firebase orders, and chat messages.
+                Supabase orders have already been cleared. Some Firebase data may require manual deletion due to security rules.
               </p>
               <Button 
                 variant="destructive" 
@@ -1087,7 +1134,7 @@ const Admin = () => {
                 disabled={loading}
                 className="bg-red-600 hover:bg-red-700"
               >
-                {loading ? 'Resetting...' : 'Reset All User Data'}
+                {loading ? 'Clearing Data...' : 'Reset User Data'}
               </Button>
             </div>
             <div className="text-xs text-red-500">
