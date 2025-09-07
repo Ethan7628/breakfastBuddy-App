@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, onSnapshot, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, onSnapshot, where, deleteDoc } from 'firebase/firestore';
 import { db, getAllCarts } from '@/lib/firebase';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -452,6 +452,65 @@ const Admin = () => {
     setChatError(null);
     setChatLoading(true);
     window.location.reload();
+  };
+
+  const resetAllUserData = async () => {
+    const confirmed = window.confirm(
+      "⚠️ WARNING: This will permanently delete ALL user carts, orders, and chat messages. User accounts will remain intact. Are you sure you want to continue?"
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+
+      // Clear all cart items from Firebase
+      console.log('Clearing all cart items...');
+      const cartSnapshot = await getDocs(collection(db, 'userCarts'));
+      const cartDeletePromises = cartSnapshot.docs.map(cartDoc => 
+        deleteDoc(doc(db, 'userCarts', cartDoc.id))
+      );
+      await Promise.all(cartDeletePromises);
+      console.log(`Deleted ${cartSnapshot.docs.length} cart items`);
+
+      // Clear all Firebase orders (if any exist)
+      console.log('Clearing Firebase orders...');
+      const ordersSnapshot = await getDocs(collection(db, 'orders'));
+      const orderDeletePromises = ordersSnapshot.docs.map(orderDoc => 
+        deleteDoc(doc(db, 'orders', orderDoc.id))
+      );
+      await Promise.all(orderDeletePromises);
+      console.log(`Deleted ${ordersSnapshot.docs.length} Firebase orders`);
+
+      // Clear all chat messages
+      console.log('Clearing chat messages...');
+      const chatSnapshot = await getDocs(collection(db, 'chatMessages'));
+      const chatDeletePromises = chatSnapshot.docs.map(chatDoc => 
+        deleteDoc(doc(db, 'chatMessages', chatDoc.id))
+      );
+      await Promise.all(chatDeletePromises);
+      console.log(`Deleted ${chatSnapshot.docs.length} chat messages`);
+
+      // Refresh the data
+      setCartItems([]);
+      setOrders([]);
+      setUserChats([]);
+
+      toast({
+        title: 'Reset Complete!',
+        description: `Successfully cleared all user data. Deleted ${cartSnapshot.docs.length} cart items, ${ordersSnapshot.docs.length} orders, and ${chatSnapshot.docs.length} chat messages.`,
+      });
+
+    } catch (error) {
+      console.error('Error resetting user data:', error);
+      toast({
+        title: 'Reset Failed',
+        description: 'An error occurred while resetting user data. Check console for details.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
@@ -1003,6 +1062,37 @@ const Admin = () => {
                 No orders found
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Reset Section */}
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader>
+          <CardTitle className="text-red-800 flex items-center gap-2">
+            ⚠️ Data Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-lg border border-red-200">
+              <h3 className="font-semibold text-red-800 mb-2">Reset All User Data</h3>
+              <p className="text-red-600 text-sm mb-4">
+                This will permanently delete ALL user carts, orders (both Firebase and Supabase), and chat messages. 
+                User accounts will remain intact and users can continue logging in.
+              </p>
+              <Button 
+                variant="destructive" 
+                onClick={resetAllUserData}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {loading ? 'Resetting...' : 'Reset All User Data'}
+              </Button>
+            </div>
+            <div className="text-xs text-red-500">
+              Note: Supabase orders have already been cleared. This button will clear remaining Firebase data.
+            </div>
           </div>
         </CardContent>
       </Card>
