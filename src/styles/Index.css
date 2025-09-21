@@ -121,6 +121,37 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
+/* Responsive for iPhone 12 mini (width: 360px) */
+@media (max-width: 380px) {
+    .index-features-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .index-feature-card {
+        margin: 0 auto;
+        width: 90vw;
+        min-width: 0;
+        max-width: 320px;
+        padding: 1rem 0.5rem;
+        font-size: 0.95rem;
+    }
+    .index-feature-card-content {
+        padding: 1.2rem;
+    }
+    .index-feature-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 2.2rem;
+        margin-bottom: 1rem;
+    }
+    .index-feature-title {
+        font-size: 1.1rem;
+    }
+    .index-feature-desc {
+        font-size: 0.95rem;
+    }
+}
+
 .index-feature-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
