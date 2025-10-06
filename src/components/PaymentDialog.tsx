@@ -161,14 +161,14 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
           <div className="flex space-x-3 pt-4">
             <Button 
               variant="outline" 
-              className="flex-1" 
+              className="flex-1 hover:bg-gray-100 active:scale-95 transition-transform font-semibold" 
               onClick={onClose}
               disabled={isProcessing}
             >
               Cancel
             </Button>
             <Button 
-              className="flex-1" 
+              className="flex-1 bg-primary hover:bg-primary/90 active:scale-95 transition-all shadow-md hover:shadow-lg font-semibold" 
               onClick={handlePayment}
               disabled={isProcessing}
             >
