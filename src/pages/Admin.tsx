@@ -909,7 +909,7 @@ const Admin = () => {
                         </div>
                         <div className="text-right">
                           {chat.unreadCount > 0 && (
-                            <span className="notification-badge">
+                            <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">
                               {chat.unreadCount}
                             </span>
                           )}
@@ -938,10 +938,10 @@ const Admin = () => {
                     {selectedChatData.messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`p-2 max-w-[80%] ${
+                        className={`p-2 rounded max-w-[80%] ${
                           message.isFromAdmin
-                            ? 'chat-bubble-admin ml-auto'
-                            : 'chat-bubble-user mr-auto'
+                            ? 'bg-breakfast-200 text-breakfast-800 ml-auto'
+                            : 'bg-white text-breakfast-700 mr-auto'
                         }`}
                       >
                         <div className="text-sm">{message.message}</div>
