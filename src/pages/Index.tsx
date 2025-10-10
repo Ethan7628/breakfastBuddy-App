@@ -23,19 +23,19 @@ const Index = () => {
               <div className="index-hero-btns">
                 {currentUser ? (
                   <>
-                    <Button asChild variant="hero" size="lg">
+                    <Button asChild size="lg" className="bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-500 hover:to-yellow-400 text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link to="/dashboard">Go to Dashboard</Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg">
+                    <Button asChild variant="outline" size="lg" className="bg-white/90 backdrop-blur-sm border-2 border-white text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg hover:bg-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link to="/menu">Browse Menu</Link>
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Button asChild variant="hero" size="lg">
+                    <Button asChild size="lg" className="bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-500 hover:to-yellow-400 text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link to="/signup">Get Started</Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg">
+                    <Button asChild variant="outline" size="lg" className="bg-white/90 backdrop-blur-sm border-2 border-white text-gray-800 font-semibold px-8 py-3 rounded-lg shadow-lg hover:bg-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link to="/login">Sign In</Link>
                     </Button>
                   </>
@@ -97,7 +97,7 @@ const Index = () => {
             <p className="index-cta-desc">
               Join thousands of satisfied students who've made Breakfast Buddy their go-to morning fuel. Your taste buds will thank you.
             </p>
-            <Button asChild variant="hero" size="lg" className="text-lg py-6">
+            <Button asChild size="lg" className="bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-500 hover:to-yellow-400 text-gray-800 font-semibold px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 text-lg">
               <Link to="/signup">Start Your Journey</Link>
             </Button>
           </div>
