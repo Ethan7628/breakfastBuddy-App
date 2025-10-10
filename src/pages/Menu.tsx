@@ -30,7 +30,28 @@ interface MenuItem {
   popular?: boolean;
 }
 
+const MENU_CACHE_KEY = 'breakfast_menu_items';
+const MENU_CACHE_TIMESTAMP_KEY = 'breakfast_menu_timestamp';
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
 const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
+  // Check if we have cached data
+  const cachedData = localStorage.getItem(MENU_CACHE_KEY);
+  const cachedTimestamp = localStorage.getItem(MENU_CACHE_TIMESTAMP_KEY);
+
+  if (cachedData && cachedTimestamp) {
+    const timestamp = parseInt(cachedTimestamp);
+    const now = Date.now();
+    
+    // If cache is still valid (less than 24 hours old), return cached data
+    if (now - timestamp < CACHE_DURATION) {
+      console.log('Using cached menu items');
+      return JSON.parse(cachedData);
+    }
+  }
+
+  // If no cache or cache expired, fetch new data
+  console.log('Fetching fresh menu items');
   const meals: MenuItem[] = [];
 
   for (let i = 0; i < 18; i++) {
@@ -50,6 +71,10 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
 
     meals.push(menuItem);
   }
+
+  // Cache the new data
+  localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(meals));
+  localStorage.setItem(MENU_CACHE_TIMESTAMP_KEY, Date.now().toString());
 
   return meals;
 };

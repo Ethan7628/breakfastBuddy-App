@@ -53,13 +53,16 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         paymentMethod: selectedMethod
       });
 
-      // Create payment intent
+      // Create payment with Flutterwave
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           firebaseUserId: currentUser.uid,
           items,
           totalAmount,
-          paymentMethod: selectedMethod
+          paymentMethod: selectedMethod,
+          customerEmail: currentUser.email || 'customer@example.com',
+          customerName: currentUser.displayName || 'Customer',
+          customerPhone: currentUser.phoneNumber || '',
         }
       });
 
@@ -68,36 +71,14 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         throw new Error(error.message || 'Failed to create payment');
       }
 
-      console.log('Payment intent created:', data);
+      console.log('Flutterwave payment created:', data);
 
-      // For demo purposes, we'll simulate a successful payment
-      // In a real implementation, you would integrate with Stripe Elements or redirect to Stripe Checkout
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Confirm payment
-      const { data: confirmData, error: confirmError } = await supabase.functions.invoke('confirm-payment', {
-        body: {
-          paymentIntentId: data.paymentIntentId,
-          orderId: data.orderId
-        }
-      });
-
-      if (confirmError) {
-        console.error('Payment confirmation error:', confirmError);
-        throw new Error(confirmError.message || 'Failed to confirm payment');
+      // Redirect to Flutterwave payment page
+      if (data.paymentLink) {
+        window.location.href = data.paymentLink;
+      } else {
+        throw new Error('No payment link received');
       }
-
-      console.log('Payment confirmed:', confirmData);
-
-      toast({
-        title: "Payment Successful!",
-        description: "Your order has been processed successfully.",
-      });
-
-      onPaymentSuccess();
-      onClose();
     } catch (error) {
       console.error('Payment error:', error);
       toast({
@@ -105,7 +86,6 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         description: error instanceof Error ? error.message : "An error occurred during payment.",
         variant: "destructive"
       });
-    } finally {
       setIsProcessing(false);
     }
   };
