@@ -35,6 +35,24 @@
     --ring: 30 50% 25%;
 
     --radius: 0.75rem;
+    
+    /* Notification & Badge Colors */
+    --notification: 0 84% 60%;
+    --notification-foreground: 0 0% 100%;
+    
+    /* Success State */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning State */
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 0%;
+    
+    /* Chat Bubble Colors */
+    --chat-user: 0 0% 100%;
+    --chat-user-foreground: 25 35% 15%;
+    --chat-admin: 45 95% 60%;
+    --chat-admin-foreground: 25 35% 15%;
 
     --sidebar-background: 35 25% 97%;
     --sidebar-foreground: 25 35% 15%;
@@ -74,6 +92,7 @@
     --border: 25 20% 20%;
     --input: 25 20% 20%;
     --ring: 30 40% 35%;
+    
     --sidebar-background: 25 25% 8%;
     --sidebar-foreground: 35 30% 95%;
     --sidebar-primary: 30 40% 35%;
@@ -82,6 +101,24 @@
     --sidebar-accent-foreground: 35 30% 95%;
     --sidebar-border: 25 20% 20%;
     --sidebar-ring: 30 40% 35%;
+    
+    /* Notification & Badge Colors */
+    --notification: 0 84% 60%;
+    --notification-foreground: 0 0% 100%;
+    
+    /* Success State */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning State */
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 0%;
+    
+    /* Chat Bubble Colors */
+    --chat-user: 25 20% 15%;
+    --chat-user-foreground: 35 30% 95%;
+    --chat-admin: 30 40% 35%;
+    --chat-admin-foreground: 0 0% 100%;
   }
 }
 
@@ -158,15 +195,40 @@
 
 @layer components {
   .breakfast-gradient {
-    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(30 55% 30%) 100%);
   }
 
   .sunrise-gradient {
-    background: linear-gradient(135deg, #d2b48c 0%, #ffd54f 100%);
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(45 100% 65%) 100%);
   }
 
   .warm-accent {
-    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(45 100% 70%) 100%);
+  }
+  
+  /* Notification Badge */
+  .notification-badge {
+    background-color: hsl(var(--notification));
+    color: hsl(var(--notification-foreground));
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 500;
+  }
+  
+  /* Chat Bubbles */
+  .chat-bubble-user {
+    background-color: hsl(var(--chat-user));
+    color: hsl(var(--chat-user-foreground));
+    border-radius: 0.5rem;
+    border-bottom-right-radius: 0.25rem;
+  }
+  
+  .chat-bubble-admin {
+    background-color: hsl(var(--chat-admin));
+    color: hsl(var(--chat-admin-foreground));
+    border-radius: 0.5rem;
+    border-bottom-left-radius: 0.25rem;
   }
 
   /* Better spacing utilities */
@@ -188,14 +250,14 @@
     font-weight: 500;
     transition-property: all;
     transition-duration: 200ms;
-    background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(30 55% 30%) 100%);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 2px 8px hsl(var(--primary) / 0.3);
   }
 
   .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
   }
 
   .btn-accent {
@@ -207,14 +269,14 @@
     font-weight: 500;
     transition-property: all;
     transition-duration: 200ms;
-    background: linear-gradient(135deg, #ffd54f 0%, #ffeb3b 100%);
-    color: hsl(var(--foreground));
-    box-shadow: 0 2px 8px rgba(255, 213, 79, 0.3);
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(45 100% 70%) 100%);
+    color: hsl(var(--accent-foreground));
+    box-shadow: 0 2px 8px hsl(var(--accent) / 0.3);
   }
 
   .btn-accent:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 213, 79, 0.4);
+    box-shadow: 0 4px 12px hsl(var(--accent) / 0.4);
   }
 
   /* Custom select styling */

@@ -359,7 +359,7 @@ const Menu = () => {
             key={category}
             variant={selectedCategory === category ? "default" : "outline"}
             onClick={() => setSelectedCategory(category)}
-            className={selectedCategory === category ? "breakfast-gradient text-white" : "text-breakfast-700 border-breakfast-300"}
+            className={selectedCategory === category ? "breakfast-gradient" : ""}
           >
             {category}
           </Button>
@@ -380,7 +380,7 @@ const Menu = () => {
                 </span>
               </div>
               <Button
-                className="breakfast-gradient text-white"
+                className="breakfast-gradient"
                 onClick={handleCheckout}
                 disabled={isCheckingOut}
               >
@@ -409,7 +409,7 @@ const Menu = () => {
                   />
                 </div>
                 {item.popular && (
-                  <span className="menu-item-popular bg-breakfast-500 text-white">Popular</span>
+                  <span className="menu-item-popular bg-primary text-primary-foreground">Popular</span>
                 )}
               </div>
               <CardTitle className="menu-item-title text-breakfast-800">{item.name}</CardTitle>
@@ -429,8 +429,7 @@ const Menu = () => {
                       <Button
                         onClick={(e) => removeFromCart(item.id, e)}
                         size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-300 hover:bg-red-50"
+                        variant="destructive"
                       >
                         Remove
                       </Button>
@@ -439,7 +438,7 @@ const Menu = () => {
                   <Button
                     onClick={(e) => addToCart(item.id, e)}
                     size="sm"
-                    className="breakfast-gradient text-white"
+                    className="breakfast-gradient"
                     disabled={isAddingToCart === item.id}
                   >
                     {isAddingToCart === item.id ? 'Adding...' : 'Add to Cart'}
@@ -470,7 +469,7 @@ const Menu = () => {
                     className="w-full h-64 object-cover rounded-lg"
                   />
                   {selectedItem.popular && (
-                    <span className="absolute top-3 right-3 bg-amber-300 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    <span className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
                       Popular
                     </span>
                   )}
@@ -503,8 +502,7 @@ const Menu = () => {
                       <Button
                         onClick={(e) => removeFromCart(selectedItem.id, e)}
                         size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-300 hover:bg-red-50"
+                        variant="destructive"
                       >
                         Remove
                       </Button>
@@ -513,7 +511,7 @@ const Menu = () => {
                 </div>
                 <Button
                   onClick={(e) => addToCart(selectedItem.id, e)}
-                  className="breakfast-gradient text-white px-6"
+                  className="breakfast-gradient px-6"
                   disabled={isAddingToCart === selectedItem.id}
                 >
                   {isAddingToCart === selectedItem.id ? 'Adding...' : 'Add to Cart'}
