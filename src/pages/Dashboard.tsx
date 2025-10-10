@@ -489,7 +489,7 @@ const Dashboard = () => {
                 <span>Chat with Admin</span>
                 {chatLoading && <span className="text-sm font-normal ml-2">(Loading...)</span>}
                 {chatMessages.filter(msg => msg.isFromAdmin && !msg.isRead).length > 0 && (
-                  <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                  <span className="ml-2 notification-badge">
                     {chatMessages.filter(msg => msg.isFromAdmin && !msg.isRead).length} new
                   </span>
                 )}
@@ -509,7 +509,7 @@ const Dashboard = () => {
                   <Button 
                     size="sm" 
                     onClick={retryChatConnection}
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    variant="destructive"
                   >
                     Retry Connection
                   </Button>
@@ -542,10 +542,10 @@ const Dashboard = () => {
                       className={`flex ${message.isFromAdmin ? 'justify-start' : 'justify-end'}`}
                     >
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-sm ${
+                        className={`max-w-xs lg:max-w-md px-4 py-3 shadow-sm ${
                           message.isFromAdmin
-                            ? 'bg-yellow-500 text-white rounded-bl-sm'
-                            : 'bg-amber-800 text-white rounded-br-sm'
+                            ? 'chat-bubble-admin'
+                            : 'chat-bubble-user'
                         }`}
                       >
                         <div className="text-xs font-medium mb-1 opacity-90">
@@ -598,7 +598,7 @@ const Dashboard = () => {
                   >
                     {isSendingMessage ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                         Sending...
                       </>
                     ) : (
