@@ -1,10 +1,13 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Outlet } from 'react-router-dom';
+import { useSupabaseRole } from '@/hooks/useSupabaseRole';
 
 const AdminRoute = () => {
-  const { currentUser, userData, loading } = useAuth();
-  const adminEmail = "kusasirakwe.ethan.upti@gmail.com";
+  const { currentUser, loading: authLoading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useSupabaseRole();
+
+  const loading = authLoading || roleLoading;
 
   if (loading) {
     return (
@@ -14,10 +17,8 @@ const AdminRoute = () => {
     );
   }
 
-  // Check both currentUser email and userData.isAdmin for double security
-  const isAdmin = currentUser?.email === adminEmail && userData?.isAdmin === true;
-  
-  return isAdmin ? <Outlet /> : <Navigate to="/" replace />;
+  // Server-side role check via Supabase
+  return (currentUser && isAdmin) ? <Outlet /> : <Navigate to="/" replace />;
 };
 
 export default AdminRoute;

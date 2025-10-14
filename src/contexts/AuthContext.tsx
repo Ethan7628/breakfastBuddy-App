@@ -14,7 +14,6 @@ interface UserData {
   uid: string;
   name: string;
   email: string;
-  isAdmin: boolean;
   location?: string;
   block?: string;
   selectedBlock?: string;
@@ -41,9 +40,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Hardcoded admin email - this is our custom admin system
-const ADMIN_EMAIL = 'kusasirakwe.ethan.upti@gmail.com';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -57,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       uid: user.uid,
       name,
       email,
-      isAdmin: email === ADMIN_EMAIL, // Only our hardcoded email gets admin access
       createdAt: new Date().toISOString()
     };
 
@@ -110,8 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const docData = userDoc.data();
             const userData = {
               ...docData,
-              uid: user.uid,
-              isAdmin: user.email === ADMIN_EMAIL // Always check against hardcoded admin email
+              uid: user.uid
             } as UserData;
             
             console.log('User data loaded from Firestore:', userData);
@@ -122,7 +116,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               uid: user.uid,
               name: user.displayName || 'User',
               email: user.email || '',
-              isAdmin: user.email === ADMIN_EMAIL,
               createdAt: new Date().toISOString()
             };
             await setDoc(doc(db, 'users', user.uid), newUserData);

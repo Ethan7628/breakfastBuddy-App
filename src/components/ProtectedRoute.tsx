@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { useSupabaseRole } from '@/hooks/useSupabaseRole';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -7,7 +8,10 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
-  const { currentUser, userData, loading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useSupabaseRole();
+
+  const loading = authLoading || (adminOnly ? roleLoading : false);
 
   if (loading) {
     return (
@@ -21,7 +25,7 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
     return <Navigate to="/login" />;
   }
 
-  if (adminOnly && (!userData || !userData.isAdmin)) {
+  if (adminOnly && !isAdmin) {
     return <Navigate to="/dashboard" />;
   }
 

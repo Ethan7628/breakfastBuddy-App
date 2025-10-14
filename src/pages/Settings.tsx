@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseRole } from '@/hooks/useSupabaseRole';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
@@ -15,10 +16,9 @@ import '../styles/Settings.css';
 
 const Settings = () => {
   const { currentUser, userData, updateUserBlock } = useAuth();
+  const { isAdmin } = useSupabaseRole();
   const [selectedBlock, setSelectedBlock] = useState(userData?.selectedBlock || '');
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
-  const adminEmail = "kusasirakwe.ethan.upti@gmail.com";
-  const isAdmin = currentUser?.email === adminEmail;
 
   const blocks = [
     { id: 'block-a', name: 'Block A' },
