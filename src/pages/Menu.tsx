@@ -11,6 +11,7 @@ import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'fireb
 import { db } from '@/lib/firebase';
 import { PaymentDialog } from '@/components/PaymentDialog';
 import { playNotificationSound } from '@/utils/soundNotification';
+import { supabase } from '@/integrations/supabase/client';
 import '../styles/Menu.css';
 
 interface MealItem {
@@ -30,53 +31,35 @@ interface MenuItem {
   popular?: boolean;
 }
 
-const MENU_CACHE_KEY = 'breakfast_menu_items';
-const MENU_CACHE_TIMESTAMP_KEY = 'breakfast_menu_timestamp';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
 const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
-  // Check if we have cached data
-  const cachedData = localStorage.getItem(MENU_CACHE_KEY);
-  const cachedTimestamp = localStorage.getItem(MENU_CACHE_TIMESTAMP_KEY);
+  console.log('Fetching menu items from Supabase');
+  
+  // Fetch menu items from Supabase (server-side authoritative prices)
+  const { data: menuItems, error } = await supabase
+    .from('menu_items')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-  if (cachedData && cachedTimestamp) {
-    const timestamp = parseInt(cachedTimestamp);
-    const now = Date.now();
-    
-    // If cache is still valid (less than 24 hours old), return cached data
-    if (now - timestamp < CACHE_DURATION) {
-      console.log('Using cached menu items');
-      return JSON.parse(cachedData);
-    }
+  if (error) {
+    console.error('Error fetching menu items from Supabase:', error);
+    throw new Error('Failed to load menu items');
   }
 
-  // If no cache or cache expired, fetch new data
-  console.log('Fetching fresh menu items');
-  const meals: MenuItem[] = [];
-
-  for (let i = 0; i < 18; i++) {
-    const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
-    const data = await response.json();
-    const meal: MealItem = data.meals[0];
-
-    const menuItem: MenuItem = {
-      id: meal.idMeal,
-      name: meal.strMeal,
-      description: meal.strInstructions,
-      price: Math.floor(Math.random() * 21000) + 9000, // UGX 9,000 - 30,000
-      category: 'Breakfast Special',
-      image: meal.strMealThumb,
-      popular: Math.random() > 0.7
-    };
-
-    meals.push(menuItem);
+  if (!menuItems || menuItems.length === 0) {
+    console.log('No menu items in database, returning empty array');
+    return [];
   }
 
-  // Cache the new data
-  localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(meals));
-  localStorage.setItem(MENU_CACHE_TIMESTAMP_KEY, Date.now().toString());
-
-  return meals;
+  // Map Supabase data to MenuItem format
+  return menuItems.map((item: any) => ({
+    id: item.id,
+    name: item.name,
+    description: item.description || '',
+    price: item.price,
+    category: item.category || 'Breakfast Special',
+    image: item.image_url || '',
+    popular: item.popular || false
+  }));
 };
 
 const categories = ['All', 'Breakfast Special', 'Popular'];
