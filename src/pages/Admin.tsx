@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { playNotificationSound } from '@/utils/soundNotification';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupabaseRole } from '@/hooks/useSupabaseRole';
+import { MenuSeeder } from '@/components/MenuSeeder';
 import '../styles/Admin.css';
 
 interface User {
@@ -865,6 +866,11 @@ const Admin = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Menu Database Management */}
+        <div className="mb-8">
+          <MenuSeeder />
+        </div>
 
         {/* User Communications */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

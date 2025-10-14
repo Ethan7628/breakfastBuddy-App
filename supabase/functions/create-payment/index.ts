@@ -142,18 +142,80 @@ serve(async (req) => {
 
     const { items, totalAmount, paymentMethod, customerEmail, customerName, customerPhone } = requestData;
     
-    // 3. Validate price consistency
-    if (!validatePriceConsistency(items, totalAmount)) {
-      console.error('[CREATE-PAYMENT] Total amount does not match sum of items');
+    // 3. Fetch authoritative prices from database
+    const itemIds = items.map((item: any) => item.id || item.itemId);
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select('id, price')
+      .in('id', itemIds);
+
+    if (menuError) {
+      console.error('[CREATE-PAYMENT] Failed to fetch menu items:', menuError);
       return new Response(JSON.stringify({ 
-        error: 'Invalid payment amount' 
+        error: 'Failed to validate items. Please try again.' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create a map of authoritative prices
+    const priceMap = new Map<string, number>();
+    menuItems?.forEach((menuItem: any) => {
+      priceMap.set(menuItem.id, menuItem.price);
+    });
+
+    // 4. Validate each item's price against database
+    let serverCalculatedTotal = 0;
+    for (const item of items) {
+      const itemId = item.id || item.itemId;
+      const authoritativePrice = priceMap.get(itemId);
+      
+      if (!authoritativePrice) {
+        console.error('[CREATE-PAYMENT] Item not found in database:', itemId);
+        return new Response(JSON.stringify({ 
+          error: 'Invalid items in order' 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check if client-provided price matches database price
+      if (Math.abs(item.price - authoritativePrice) > 0.01) {
+        console.error('[CREATE-PAYMENT] Price mismatch detected:', { 
+          itemId, 
+          clientPrice: item.price, 
+          serverPrice: authoritativePrice 
+        });
+        return new Response(JSON.stringify({ 
+          error: 'Invalid item prices. Please refresh and try again.' 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      serverCalculatedTotal += authoritativePrice * item.quantity;
+    }
+
+    // 5. Validate total amount matches server calculation
+    const difference = Math.abs(serverCalculatedTotal - totalAmount);
+    if (difference > 0.01) {
+      console.error('[CREATE-PAYMENT] Total amount mismatch:', { 
+        serverTotal: serverCalculatedTotal, 
+        clientTotal: totalAmount,
+        difference 
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Invalid payment amount. Please refresh and try again.' 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    // 4. Verify user is creating order for themselves
+    // 6. Verify user is creating order for themselves
     if (requestData.firebaseUserId !== user.id) {
       console.error('[CREATE-PAYMENT] User ID mismatch');
       return new Response(JSON.stringify({ 
