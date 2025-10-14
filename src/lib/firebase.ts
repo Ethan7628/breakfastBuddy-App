@@ -21,39 +21,6 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Admin initialization function (only call when needed)
-export const initializeAdmin = async (email: string, password: string) => {
-  try {
-    const { createUserWithEmailAndPassword } = await import('firebase/auth');
-    const { doc, setDoc, getDoc } = await import('firebase/firestore');
-
-    // Check if admin already exists
-    const adminQuery = query(collection(db, 'users'), where('email', '==', email));
-    const existingAdmins = await getDocs(adminQuery);
-    
-    if (!existingAdmins.empty) {
-      console.log("Admin already exists");
-      return null;
-    }
-
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    await setDoc(doc(db, "users", user.uid), {
-      name: "Admin",
-      email: email,
-      isAdmin: true,
-      createdAt: new Date().toISOString()
-    });
-
-    console.log("Admin initialized successfully!");
-    return user;
-  } catch (error) {
-    console.error("Error initializing admin:", error);
-    throw error;
-  }
-};
-
 // Menu item interfaces
 export interface MenuItem {
   id: string;
