@@ -7,7 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Zod-like validation schemas (inline to avoid external dependencies)
+// Email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Phone validation - basic international format
+const PHONE_REGEX = /^\+?[1-9]\d{1,14}$/;
+
+// Validation functions
 const validateCreatePayment = (data: any) => {
   const errors: string[] = [];
   
@@ -39,7 +44,38 @@ const validateCreatePayment = (data: any) => {
     errors.push('paymentMethod must be "card" or "mobile_money"');
   }
   
+  // Validate customer email format if provided
+  if (data.customerEmail && !EMAIL_REGEX.test(data.customerEmail)) {
+    errors.push('customerEmail must be a valid email address');
+  }
+  
+  // Validate customer phone format if provided
+  if (data.customerPhone && !PHONE_REGEX.test(data.customerPhone)) {
+    errors.push('customerPhone must be a valid phone number');
+  }
+  
+  // Validate customer name if provided
+  if (data.customerName && (typeof data.customerName !== 'string' || data.customerName.length > 100)) {
+    errors.push('customerName must be a string (max 100 chars)');
+  }
+  
   return errors;
+};
+
+// Validate price consistency
+const validatePriceConsistency = (items: any[], totalAmount: number) => {
+  const calculatedTotal = items.reduce((sum, item) => {
+    return sum + (item.price * item.quantity);
+  }, 0);
+  
+  // Allow for small floating point differences (0.01)
+  const difference = Math.abs(calculatedTotal - totalAmount);
+  if (difference > 0.01) {
+    console.error('[CREATE-PAYMENT] Price mismatch:', { calculatedTotal, totalAmount, difference });
+    return false;
+  }
+  
+  return true;
 };
 
 serve(async (req) => {
@@ -106,7 +142,18 @@ serve(async (req) => {
 
     const { items, totalAmount, paymentMethod, customerEmail, customerName, customerPhone } = requestData;
     
-    // 3. Verify user is creating order for themselves
+    // 3. Validate price consistency
+    if (!validatePriceConsistency(items, totalAmount)) {
+      console.error('[CREATE-PAYMENT] Total amount does not match sum of items');
+      return new Response(JSON.stringify({ 
+        error: 'Invalid payment amount' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // 4. Verify user is creating order for themselves
     if (requestData.firebaseUserId !== user.id) {
       console.error('[CREATE-PAYMENT] User ID mismatch');
       return new Response(JSON.stringify({ 

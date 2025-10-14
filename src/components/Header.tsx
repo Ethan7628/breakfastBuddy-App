@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseRole } from '@/hooks/useSupabaseRole';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ const Header = () => {
   const [adminUnreadCount, setAdminUnreadCount] = useState(0);
   const [isStandalone, setIsStandalone] = useState(false);
   const { currentUser, userData, logout } = useAuth();
+  const { isAdmin } = useSupabaseRole();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -46,7 +48,7 @@ const Header = () => {
 
   // Listen for unread messages for regular users
   useEffect(() => {
-    if (!currentUser || userData?.isAdmin) {
+    if (!currentUser || isAdmin) {
       setUnreadCount(0);
       return;
     }
@@ -63,11 +65,11 @@ const Header = () => {
     });
 
     return () => unsubscribe();
-  }, [currentUser, userData?.isAdmin]);
+  }, [currentUser, isAdmin]);
 
   // Listen for unread messages for admin users
   useEffect(() => {
-    if (!currentUser || !userData?.isAdmin) {
+    if (!currentUser || !isAdmin) {
       setAdminUnreadCount(0);
       return;
     }
@@ -83,7 +85,7 @@ const Header = () => {
     });
 
     return () => unsubscribe();
-  }, [currentUser, userData?.isAdmin]);
+  }, [currentUser, isAdmin]);
 
   const handleLogout = async () => {
     try {
@@ -104,13 +106,13 @@ const Header = () => {
     { to: '/', label: 'Home', icon: Home },
     { to: '/menu', label: 'Menu', icon: null },
     ...(currentUser ? [{ to: '/orders', label: 'Orders', icon: null }] : []),
-    ...(userData?.isAdmin ? [{
+    ...(isAdmin ? [{
       to: '/admin',
       label: 'Admin',
       icon: null,
       badge: adminUnreadCount > 0 ? adminUnreadCount : null
     }] : []),
-    ...(currentUser && !userData?.isAdmin ? [{
+    ...(currentUser && !isAdmin ? [{
       to: '/dashboard',
       label: 'Dashboard',
       icon: null,

@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { playNotificationSound } from '@/utils/soundNotification';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseRole } from '@/hooks/useSupabaseRole';
 import '../styles/Admin.css';
 
 interface User {
@@ -76,6 +77,7 @@ const Admin = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const { userData } = useAuth();
+  const { isAdmin } = useSupabaseRole();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -145,16 +147,16 @@ const Admin = () => {
       }
     };
 
-    if (userData?.isAdmin) {
+    if (isAdmin) {
       fetchData();
     } else {
       setLoading(false);
     }
-  }, [userData]);
+  }, [isAdmin]);
 
   // Fixed admin chat listener
   useEffect(() => {
-    if (!userData?.isAdmin) {
+    if (!isAdmin) {
       console.log('User is not admin, skipping chat setup');
       return;
     }
@@ -320,7 +322,7 @@ const Admin = () => {
         unsubscribeFn();
       }
     };
-  }, [userData?.isAdmin]);
+  }, [isAdmin]);
 
   // Auto-mark messages as read when a chat is selected
   useEffect(() => {
@@ -606,7 +608,7 @@ const Admin = () => {
     }
   };
 
-  if (!userData?.isAdmin) {
+  if (!isAdmin) {
     return (
       <div className="admin-access-denied">
         <Card>
