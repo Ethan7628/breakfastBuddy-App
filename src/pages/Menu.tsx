@@ -81,10 +81,10 @@ const Menu = () => {
   // Load user's cart from Firestore
   useEffect(() => {
     const loadCart = async () => {
-      if (currentUser?.uid) {
+      if (currentUser?.id) {
         try {
-          console.log('Loading cart for user:', currentUser.uid);
-          const cartItems: CartItem[] = await getUserCart(currentUser.uid);
+          console.log('Loading cart for user:', currentUser.id);
+          const cartItems: CartItem[] = await getUserCart(currentUser.id);
           console.log('Loaded cart items:', cartItems);
 
           const cartMap: Record<string, number> = {};
@@ -135,7 +135,7 @@ const Menu = () => {
       console.log('Adding item to cart:', item);
 
       await addToUserCart(
-        currentUser.uid,
+        currentUser.id,
         itemId,
         {
           name: item.name,
@@ -181,10 +181,10 @@ const Menu = () => {
       return;
     }
 
-    console.log('Starting removeFromCart process:', { itemId, userUid: currentUser.uid });
+    console.log('Starting removeFromCart process:', { itemId, userUid: currentUser.id });
 
     try {
-      const success = await removeFromUserCart(currentUser.uid, itemId);
+      const success = await removeFromUserCart(currentUser.id, itemId);
       
       if (success) {
         // Update local state
@@ -222,13 +222,13 @@ const Menu = () => {
   };
 
   const clearUserCart = async () => {
-    if (!currentUser?.uid) return;
+    if (!currentUser?.id) return;
 
     try {
       // Get all cart items for this user
       const cartQuery = query(
         collection(db, 'userCarts'),
-        where('userId', '==', currentUser.uid)
+        where('userId', '==', currentUser.id)
       );
       const cartSnapshot = await getDocs(cartQuery);
 

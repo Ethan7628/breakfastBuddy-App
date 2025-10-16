@@ -55,7 +55,7 @@ const Header = () => {
 
     const messagesQuery = query(
       collection(db, 'chatMessages'),
-      where('userId', '==', currentUser.uid),
+      where('userId', '==', currentUser.id),
       where('isFromAdmin', '==', true),
       where('isRead', '==', false)
     );

@@ -54,34 +54,64 @@ export type Database = {
         Row: {
           created_at: string | null
           currency: string | null
-          firebase_user_id: string
           id: string
           items: Json
+          old_firebase_user_id: string
           payment_status: string | null
           stripe_payment_intent_id: string | null
           total_amount: number
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           currency?: string | null
-          firebase_user_id: string
           id?: string
           items: Json
+          old_firebase_user_id: string
           payment_status?: string | null
           stripe_payment_intent_id?: string | null
           total_amount: number
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           currency?: string | null
-          firebase_user_id?: string
           id?: string
           items?: Json
+          old_firebase_user_id?: string
           payment_status?: string | null
           stripe_payment_intent_id?: string | null
           total_amount?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          selected_block: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          name: string
+          selected_block?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          selected_block?: string | null
           updated_at?: string | null
         }
         Relationships: []

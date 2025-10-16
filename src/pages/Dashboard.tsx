@@ -71,7 +71,7 @@ const Dashboard = () => {
         console.log('Fetching user orders for dashboard...');
         const ordersQuery = query(
           collection(db, 'orders'),
-          where('userId', '==', currentUser.uid)
+          where('userId', '==', currentUser.id)
         );
 
         const snapshot = await getDocs(ordersQuery);
@@ -99,7 +99,7 @@ const Dashboard = () => {
       return;
     }
 
-    console.log('Setting up chat listener for user:', currentUser.uid);
+    console.log('Setting up chat listener for user:', currentUser.id);
     setChatLoading(true);
     setChatError(null);
 
@@ -110,7 +110,7 @@ const Dashboard = () => {
         // First fetch messages directly
         const messagesQuery = query(
           collection(db, 'chatMessages'),
-          where('userId', '==', currentUser.uid)
+          where('userId', '==', currentUser.id)
         );
 
         console.log('Attempting to fetch chat messages...');
@@ -141,7 +141,7 @@ const Dashboard = () => {
         // Set up real-time listener
         const orderedQuery = query(
           collection(db, 'chatMessages'),
-          where('userId', '==', currentUser.uid),
+          where('userId', '==', currentUser.id),
           orderBy('createdAt', 'asc')
         );
 
@@ -195,7 +195,7 @@ const Dashboard = () => {
           const fallbackSnapshot = await getDocs(collection(db, 'chatMessages'));
           
           const userMessages = fallbackSnapshot.docs
-            .filter(doc => doc.data().userId === currentUser.uid)
+            .filter(doc => doc.data().userId === currentUser.id)
             .map(doc => {
               const data = doc.data();
               return {
@@ -230,7 +230,7 @@ const Dashboard = () => {
         unsubscribeFn();
       }
     };
-  }, [currentUser, currentUser?.uid]);
+  }, [currentUser, currentUser?.id]);
 
   useEffect(() => {
     if (chatSectionOpen && currentUser) {
@@ -282,7 +282,7 @@ const Dashboard = () => {
     
     try {
       const messageData = {
-        userId: currentUser.uid,
+        userId: currentUser.id,
         userName: userData?.name || 'User',
         userEmail: currentUser.email || '',
         message: userMessage.trim(),
