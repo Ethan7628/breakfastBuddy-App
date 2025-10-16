@@ -34,7 +34,7 @@ interface CartItem {
 
 interface Order {
   id: string;
-  firebase_user_id: string;
+  user_id: string;
   items: Array<{
     id: string;
     quantity: number;
@@ -740,7 +740,7 @@ const Admin = () => {
                       <tr key={order.id} className="border-b">
                         <td className="py-3 px-4">
                           <div>
-                            <div className="font-semibold">User ID: {order.firebase_user_id}</div>
+                            <div className="font-semibold">User ID: {order.user_id}</div>
                             <div className="text-xs text-breakfast-600">Order #{order.id.slice(-6)}</div>
                           </div>
                         </td>

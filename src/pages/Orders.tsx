@@ -12,7 +12,7 @@ interface OrderItem {
 
 interface Order {
   id: string;
-  firebase_user_id: string;
+  user_id: string;
   items: OrderItem[];
   total_amount: number;
   payment_status: string;
@@ -33,12 +33,12 @@ const Orders = () => {
       }
 
       try {
-        console.log('Fetching orders for user:', currentUser.uid);
+        console.log('Fetching orders for user:', currentUser.id);
         
         const { data: ordersData, error } = await supabase
           .from('orders')
           .select('*')
-          .eq('firebase_user_id', currentUser.uid)
+          .eq('user_id', currentUser.id)
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -51,7 +51,7 @@ const Orders = () => {
         // Transform the data to match our Order interface
         const transformedOrders: Order[] = (ordersData || []).map(order => ({
           id: order.id,
-          firebase_user_id: order.firebase_user_id,
+          user_id: order.user_id,
           items: (order.items as unknown as OrderItem[]) || [],
           total_amount: order.total_amount,
           payment_status: order.payment_status || 'pending',

@@ -47,7 +47,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
       }));
 
       console.log('Creating payment with:', {
-        firebaseUserId: currentUser.uid,
+        firebaseUserId: currentUser.id,
         items,
         totalAmount,
         paymentMethod: selectedMethod
@@ -56,13 +56,13 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
       // Create payment with Flutterwave
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
-          firebaseUserId: currentUser.uid,
+          firebaseUserId: currentUser.id,
           items,
           totalAmount,
           paymentMethod: selectedMethod,
           customerEmail: currentUser.email || 'customer@example.com',
-          customerName: currentUser.displayName || 'Customer',
-          customerPhone: currentUser.phoneNumber || '',
+          customerName: currentUser.user_metadata?.name || 'Customer',
+          customerPhone: currentUser.user_metadata?.phone || '',
         }
       });
 

@@ -1,21 +1,11 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  User,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserData {
   uid: string;
   name: string;
   email: string;
-  location?: string;
-  block?: string;
   selectedBlock?: string;
   createdAt?: string;
 }
@@ -23,6 +13,7 @@ interface UserData {
 interface AuthContextType {
   currentUser: User | null;
   userData: UserData | null;
+  session: Session | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
@@ -42,43 +33,57 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const signup = async (email: string, password: string, name: string): Promise<void> => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    const userData: UserData = {
-      uid: user.uid,
-      name,
+    const { data, error } = await supabase.auth.signUp({
       email,
-      createdAt: new Date().toISOString()
-    };
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          name: name
+        }
+      }
+    });
 
-    await setDoc(doc(db, 'users', user.uid), userData);
+    if (error) throw error;
+    
+    console.log('User signed up successfully:', data.user?.email);
   };
 
   const login = async (email: string, password: string): Promise<void> => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
   };
 
   const logout = async (): Promise<void> => {
-    await signOut(auth);
+    await supabase.auth.signOut();
   };
 
   const updateUserBlock = async (blockId: string): Promise<void> => {
     if (!currentUser) throw new Error('No user logged in');
 
-    console.log('Updating user block in Firestore:', { userId: currentUser.uid, blockId });
+    console.log('Updating user block:', { userId: currentUser.id, blockId });
     
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), {
-        selectedBlock: blockId,
-        updatedAt: new Date().toISOString()
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          selected_block: blockId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id);
 
-      console.log('Successfully updated user block in Firestore');
+      if (error) throw error;
+
+      console.log('Successfully updated user block');
 
       // Update local state
       if (userData) {
@@ -87,57 +92,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Updated local user data:', updatedUserData);
       }
     } catch (error) {
-      console.error('Error updating user block in Firestore:', error);
+      console.error('Error updating user block:', error);
       throw error;
     }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user?.email);
-      
-      if (user) {
-        setCurrentUser(user);
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        setSession(session);
+        setCurrentUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Defer profile fetching to avoid blocking auth state changes
+          setTimeout(async () => {
+            try {
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
 
-          if (userDoc.exists()) {
-            const docData = userDoc.data();
-            const userData = {
-              ...docData,
-              uid: user.uid
-            } as UserData;
-            
-            console.log('User data loaded from Firestore:', userData);
-            setUserData(userData);
-          } else {
-            // If user document doesn't exist, create it
-            const newUserData: UserData = {
-              uid: user.uid,
-              name: user.displayName || 'User',
-              email: user.email || '',
-              createdAt: new Date().toISOString()
-            };
-            await setDoc(doc(db, 'users', user.uid), newUserData);
-            setUserData(newUserData);
-            console.log('Created new user document:', newUserData);
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
+              if (error) {
+                console.error('Error fetching profile:', error);
+                return;
+              }
+
+              if (profile) {
+                const userData: UserData = {
+                  uid: session.user.id,
+                  name: profile.name,
+                  email: profile.email,
+                  selectedBlock: profile.selected_block,
+                  createdAt: profile.created_at
+                };
+                
+                console.log('User profile loaded:', userData);
+                setUserData(userData);
+              }
+            } catch (error) {
+              console.error('Error fetching user profile:', error);
+            }
+          }, 0);
+        } else {
+          setUserData(null);
         }
-      } else {
-        setCurrentUser(null);
-        setUserData(null);
       }
+    );
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setCurrentUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => subscription.unsubscribe();
   }, []);
 
   const value: AuthContextType = {
     currentUser,
     userData,
+    session,
     loading,
     login,
     signup,

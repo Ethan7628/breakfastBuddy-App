@@ -4,7 +4,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useSupabaseRole } from '@/hooks/useSupabaseRole';
 
 const AdminRoute = () => {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useSupabaseRole();
 
   const loading = authLoading || roleLoading;
@@ -18,7 +18,7 @@ const AdminRoute = () => {
   }
 
   // Server-side role check via Supabase
-  return (currentUser && isAdmin) ? <Outlet /> : <Navigate to="/" replace />;
+  return (session && isAdmin) ? <Outlet /> : <Navigate to="/" replace />;
 };
 
 export default AdminRoute;

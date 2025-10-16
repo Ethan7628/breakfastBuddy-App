@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useSupabaseRole();
 
   const loading = authLoading || (adminOnly ? roleLoading : false);
@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
     );
   }
 
-  if (!currentUser) {
+  if (!session) {
     return <Navigate to="/login" />;
   }
 

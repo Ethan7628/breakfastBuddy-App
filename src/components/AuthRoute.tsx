@@ -1,9 +1,8 @@
-
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Outlet } from 'react-router-dom';
 
 const AuthRoute = () => {
-  const { currentUser, loading } = useAuth();
+  const { session, loading } = useAuth();
 
   if (loading) {
     return (
@@ -13,7 +12,7 @@ const AuthRoute = () => {
     );
   }
 
-  return currentUser ? <Outlet /> : <Navigate to="/login" replace />;
+  return session ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 export default AuthRoute;
