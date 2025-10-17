@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, onSnapshot, where, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db, getAllCarts } from '@/lib/firebase';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -155,73 +155,66 @@ const Admin = () => {
     }
   }, [isAdmin]);
 
-  // Fixed admin chat listener
+  // Setup admin chat listener with Supabase
   useEffect(() => {
     if (!isAdmin) {
       console.log('User is not admin, skipping chat setup');
       return;
     }
 
-    console.log('Setting up admin chat listener');
+    console.log('Setting up admin Supabase chat listener');
     setChatLoading(true);
     setChatError(null);
 
-    let unsubscribeFn: (() => void) | null = null;
-
     const setupChatListener = async () => {
       try {
-        // First try to fetch all messages directly
-        console.log('Fetching all chat messages for admin...');
-        const messagesSnapshot = await getDocs(collection(db, 'chatMessages'));
-        
-        console.log('Admin received chat messages:', messagesSnapshot.docs.length);
-        
-        const messages = messagesSnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            userId: data.userId || '',
-            userName: data.userName || 'Unknown User',
-            userEmail: data.userEmail || '',
-            message: data.message || '',
-            isFromAdmin: data.isFromAdmin || false,
-            createdAt: data.createdAt || new Date().toISOString(),
-            isRead: data.isRead || false
-          } as ChatMessage;
-        });
+        // Fetch all chat messages
+        const { data: messages, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .order('created_at', { ascending: true });
 
-        // Sort messages by creation time
-        messages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        if (error) throw error;
 
+        console.log('Admin received chat messages:', messages?.length || 0);
+        
         // Group messages by user
         const chatsByUser: { [userId: string]: UserChat } = {};
         
-        messages.forEach(message => {
-          if (!chatsByUser[message.userId]) {
-            chatsByUser[message.userId] = {
-              userId: message.userId,
-              userName: message.userName,
-              userEmail: message.userEmail,
+        (messages || []).forEach(msg => {
+          if (!chatsByUser[msg.user_id]) {
+            chatsByUser[msg.user_id] = {
+              userId: msg.user_id,
+              userName: msg.user_name,
+              userEmail: msg.user_email,
               messages: [],
               unreadCount: 0,
-              lastMessageTime: message.createdAt
+              lastMessageTime: msg.created_at
             };
           }
           
-          chatsByUser[message.userId].messages.push(message);
+          const chatMessage: ChatMessage = {
+            id: msg.id,
+            userId: msg.user_id,
+            userName: msg.user_name,
+            userEmail: msg.user_email,
+            message: msg.message,
+            isFromAdmin: msg.is_from_admin,
+            createdAt: msg.created_at,
+            isRead: msg.is_read
+          };
           
-          // Update last message time
-          if (message.createdAt > chatsByUser[message.userId].lastMessageTime) {
-            chatsByUser[message.userId].lastMessageTime = message.createdAt;
+          chatsByUser[msg.user_id].messages.push(chatMessage);
+          
+          if (msg.created_at > chatsByUser[msg.user_id].lastMessageTime) {
+            chatsByUser[msg.user_id].lastMessageTime = msg.created_at;
           }
           
-          // Count unread messages from users (not from admin)
-          if (!message.isFromAdmin && !message.isRead) {
-            chatsByUser[message.userId].unreadCount++;
+          if (!msg.is_from_admin && !msg.is_read) {
+            chatsByUser[msg.user_id].unreadCount++;
           }
         });
 
-        // Sort chats by latest message time
         const sortedChats = Object.values(chatsByUser).sort((a, b) => {
           return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
         });
@@ -230,83 +223,6 @@ const Admin = () => {
         setUserChats(sortedChats);
         setChatLoading(false);
         setChatError(null);
-
-        // Now set up real-time listener for updates
-        const messagesQuery = query(
-          collection(db, 'chatMessages'),
-          orderBy('createdAt', 'asc')
-        );
-
-        unsubscribeFn = onSnapshot(
-          messagesQuery,
-          (snapshot) => {
-            console.log('Real-time admin chat update:', snapshot.docs.length);
-            
-            const updatedMessages = snapshot.docs.map(doc => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                userId: data.userId || '',
-                userName: data.userName || 'Unknown User',
-                userEmail: data.userEmail || '',
-                message: data.message || '',
-                isFromAdmin: data.isFromAdmin || false,
-                createdAt: data.createdAt || new Date().toISOString(),
-                isRead: data.isRead || false
-              } as ChatMessage;
-            });
-
-            // Re-group messages by user
-            const updatedChatsByUser: { [userId: string]: UserChat } = {};
-            
-            updatedMessages.forEach(message => {
-              if (!updatedChatsByUser[message.userId]) {
-                updatedChatsByUser[message.userId] = {
-                  userId: message.userId,
-                  userName: message.userName,
-                  userEmail: message.userEmail,
-                  messages: [],
-                  unreadCount: 0,
-                  lastMessageTime: message.createdAt
-                };
-              }
-              
-              updatedChatsByUser[message.userId].messages.push(message);
-              
-              if (message.createdAt > updatedChatsByUser[message.userId].lastMessageTime) {
-                updatedChatsByUser[message.userId].lastMessageTime = message.createdAt;
-              }
-              
-              if (!message.isFromAdmin && !message.isRead) {
-                updatedChatsByUser[message.userId].unreadCount++;
-              }
-            });
-
-            const updatedSortedChats = Object.values(updatedChatsByUser).sort((a, b) => {
-              return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
-            });
-
-            // Check for new user messages
-            const newUserMessages = updatedMessages.filter(msg => 
-              !msg.isFromAdmin && !msg.isRead && 
-              new Date(msg.createdAt).getTime() > Date.now() - 5000 // Last 5 seconds
-            );
-
-            if (newUserMessages.length > 0) {
-              playNotificationSound();
-              toast({
-                title: 'New message from User',
-                description: `You have ${newUserMessages.length} new message(s)`,
-              });
-            }
-
-            setUserChats(updatedSortedChats);
-          },
-          (error) => {
-            console.error('Real-time admin chat listener error:', error);
-            // Don't show error for real-time updates since we have initial data
-          }
-        );
 
       } catch (error) {
         console.error('Error fetching admin chat messages:', error);
@@ -317,11 +233,111 @@ const Admin = () => {
 
     setupChatListener();
 
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('admin-chat-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        (payload) => {
+          console.log('Real-time admin chat update:', payload);
+          
+          setUserChats(prevChats => {
+            const chatsByUser: { [userId: string]: UserChat } = {};
+            
+            // Rebuild chats from existing state
+            prevChats.forEach(chat => {
+              chatsByUser[chat.userId] = { ...chat };
+            });
+
+            if (payload.eventType === 'INSERT') {
+              const newMsg = payload.new;
+              const userId = newMsg.user_id;
+              
+              if (!chatsByUser[userId]) {
+                chatsByUser[userId] = {
+                  userId,
+                  userName: newMsg.user_name,
+                  userEmail: newMsg.user_email,
+                  messages: [],
+                  unreadCount: 0,
+                  lastMessageTime: newMsg.created_at
+                };
+              }
+              
+              const chatMessage: ChatMessage = {
+                id: newMsg.id,
+                userId: newMsg.user_id,
+                userName: newMsg.user_name,
+                userEmail: newMsg.user_email,
+                message: newMsg.message,
+                isFromAdmin: newMsg.is_from_admin,
+                createdAt: newMsg.created_at,
+                isRead: newMsg.is_read
+              };
+              
+              chatsByUser[userId].messages.push(chatMessage);
+              chatsByUser[userId].lastMessageTime = newMsg.created_at;
+              
+              if (!newMsg.is_from_admin && !newMsg.is_read) {
+                chatsByUser[userId].unreadCount++;
+                
+                playNotificationSound();
+                toast({
+                  title: 'New message from User',
+                  description: `${newMsg.user_name} sent you a message`,
+                });
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedMsg = payload.new;
+              const userId = updatedMsg.user_id;
+              
+              if (chatsByUser[userId]) {
+                chatsByUser[userId].messages = chatsByUser[userId].messages.map(msg =>
+                  msg.id === updatedMsg.id
+                    ? {
+                        ...msg,
+                        isRead: updatedMsg.is_read,
+                        message: updatedMsg.message
+                      }
+                    : msg
+                );
+                
+                // Recalculate unread count
+                chatsByUser[userId].unreadCount = chatsByUser[userId].messages.filter(
+                  msg => !msg.isFromAdmin && !msg.isRead
+                ).length;
+              }
+            } else if (payload.eventType === 'DELETE') {
+              const deletedMsg = payload.old;
+              const userId = deletedMsg.user_id;
+              
+              if (chatsByUser[userId]) {
+                chatsByUser[userId].messages = chatsByUser[userId].messages.filter(
+                  msg => msg.id !== deletedMsg.id
+                );
+                
+                if (chatsByUser[userId].messages.length === 0) {
+                  delete chatsByUser[userId];
+                }
+              }
+            }
+
+            return Object.values(chatsByUser).sort((a, b) => {
+              return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+            });
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log('Cleaning up admin chat listener');
-      if (unsubscribeFn) {
-        unsubscribeFn();
-      }
+      supabase.removeChannel(channel);
     };
   }, [isAdmin]);
 
@@ -338,13 +354,15 @@ const Admin = () => {
           );
 
           if (unreadMessages.length > 0) {
-            const { updateDoc, doc } = await import('firebase/firestore');
+            const messageIds = unreadMessages.map(msg => msg.id);
             
-            const updatePromises = unreadMessages.map(msg =>
-              updateDoc(doc(db, 'chatMessages', msg.id), { isRead: true })
-            );
+            const { error } = await supabase
+              .from('chat_messages')
+              .update({ is_read: true })
+              .in('id', messageIds);
 
-            await Promise.all(updatePromises);
+            if (error) throw error;
+            
             console.log(`Auto-marked ${unreadMessages.length} messages as read for user ${selectedChat}`);
           }
         } catch (error) {
@@ -352,12 +370,11 @@ const Admin = () => {
         }
       };
 
-      // Small delay to ensure the chat is fully loaded
       setTimeout(markMessagesAsRead, 500);
     }
   }, [selectedChat, userChats]);
 
-  // Improved reply sending with better error handling
+  // Send reply to user via Supabase
   const sendReplyToUser = async (userId: string, userName: string, userEmail: string) => {
     if (!replyMessage.trim()) {
       toast({
@@ -371,19 +388,18 @@ const Admin = () => {
     setIsSendingReply(true);
     
     try {
-      const messageData = {
-        userId: userId,
-        userName: userName,
-        userEmail: userEmail,
-        message: replyMessage.trim(),
-        isFromAdmin: true,
-        createdAt: new Date().toISOString(),
-        isRead: false
-      };
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          user_id: userId,
+          user_name: userName,
+          user_email: userEmail,
+          message: replyMessage.trim(),
+          is_from_admin: true,
+          is_read: false
+        });
 
-      console.log('Admin sending reply:', messageData);
-      
-      await addDoc(collection(db, 'chatMessages'), messageData);
+      if (error) throw error;
 
       toast({
         title: 'Reply Sent',
@@ -407,16 +423,16 @@ const Admin = () => {
     try {
       console.log('Marking messages as read for user:', userId);
       
-      const messagesQuery = query(
-        collection(db, 'chatMessages'),
-        where('userId', '==', userId),
-        where('isFromAdmin', '==', false),
-        where('isRead', '==', false)
-      );
+      const { data: unreadMessages, error: fetchError } = await supabase
+        .from('chat_messages')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_from_admin', false)
+        .eq('is_read', false);
 
-      const snapshot = await getDocs(messagesQuery);
+      if (fetchError) throw fetchError;
       
-      if (snapshot.docs.length === 0) {
+      if (!unreadMessages || unreadMessages.length === 0) {
         toast({
           title: 'No Unread Messages',
           description: 'All messages from this user are already read.',
@@ -424,15 +440,18 @@ const Admin = () => {
         return;
       }
 
-      const updatePromises = snapshot.docs.map(messageDoc => 
-        updateDoc(doc(db, 'chatMessages', messageDoc.id), { isRead: true })
-      );
+      const messageIds = unreadMessages.map(msg => msg.id);
+      
+      const { error: updateError } = await supabase
+        .from('chat_messages')
+        .update({ is_read: true })
+        .in('id', messageIds);
 
-      await Promise.all(updatePromises);
+      if (updateError) throw updateError;
 
       toast({
         title: 'Messages Marked as Read',
-        description: `Marked ${snapshot.docs.length} messages as read.`,
+        description: `Marked ${unreadMessages.length} messages as read.`,
       });
     } catch (error) {
       console.error('Error marking messages as read:', error);
@@ -499,22 +518,22 @@ const Admin = () => {
         console.warn('Error accessing Supabase orders:', supabaseOrderError);
       }
 
-      // Try to clear chat messages from Firebase (with error handling per document)
-      console.log('Attempting to clear chat messages...');
+      // Clear Supabase chat messages
+      console.log('Attempting to clear Supabase chat messages...');
       try {
-        const chatSnapshot = await getDocs(collection(db, 'chatMessages'));
-        console.log(`Found ${chatSnapshot.docs.length} chat messages to delete`);
+        const { error } = await supabase
+          .from('chat_messages')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all messages
         
-        for (const chatDoc of chatSnapshot.docs) {
-          try {
-            await deleteDoc(doc(db, 'chatMessages', chatDoc.id));
-            deletedChats++;
-          } catch (docError) {
-            console.warn(`Could not delete chat message ${chatDoc.id}:`, docError);
-          }
+        if (error) {
+          console.warn('Error clearing Supabase chat messages:', error);
+        } else {
+          console.log('Successfully cleared Supabase chat messages');
+          deletedChats = userChats.reduce((sum, chat) => sum + chat.messages.length, 0);
         }
-      } catch (chatError) {
-        console.warn('Error accessing chat collection:', chatError);
+      } catch (supabaseChatError) {
+        console.warn('Error accessing Supabase chat messages:', supabaseChatError);
       }
 
       // Clear the displayed data regardless of Firebase operations
