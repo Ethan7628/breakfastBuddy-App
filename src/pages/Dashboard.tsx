@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, addDoc, orderBy, onSnapshot } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import '../styles/Dashboard.css';
 
@@ -99,138 +100,105 @@ const Dashboard = () => {
       return;
     }
 
-    console.log('Setting up chat listener for user:', currentUser.id);
+    console.log('Setting up Supabase chat listener for user:', currentUser.id);
     setChatLoading(true);
     setChatError(null);
 
-    let unsubscribeFn: (() => void) | null = null;
-
     const setupChatListener = async () => {
       try {
-        // First fetch messages directly
-        const messagesQuery = query(
-          collection(db, 'chatMessages'),
-          where('userId', '==', currentUser.id)
-        );
+        // Fetch initial messages
+        const { data: messages, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: true });
 
-        console.log('Attempting to fetch chat messages...');
-        const snapshot = await getDocs(messagesQuery);
+        if (error) throw error;
+
+        const formattedMessages: ChatMessage[] = (messages || []).map(msg => ({
+          id: msg.id,
+          userId: msg.user_id,
+          userName: msg.user_name,
+          userEmail: msg.user_email,
+          message: msg.message,
+          isFromAdmin: msg.is_from_admin,
+          createdAt: msg.created_at,
+          isRead: msg.is_read
+        }));
         
-        console.log('Chat messages snapshot received:', snapshot.docs.length);
-        
-        const messages = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            userId: data.userId || '',
-            userName: data.userName || 'Unknown User',
-            userEmail: data.userEmail || '',
-            message: data.message || '',
-            isFromAdmin: data.isFromAdmin || false,
-            createdAt: data.createdAt || new Date().toISOString(),
-            isRead: data.isRead || false
-          } as ChatMessage;
-        }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        
-        setChatMessages(messages);
+        setChatMessages(formattedMessages);
         setChatLoading(false);
         setChatError(null);
-        
-        console.log('Chat messages loaded successfully:', messages.length);
-
-        // Set up real-time listener
-        const orderedQuery = query(
-          collection(db, 'chatMessages'),
-          where('userId', '==', currentUser.id),
-          orderBy('createdAt', 'asc')
-        );
-
-        unsubscribeFn = onSnapshot(
-          orderedQuery,
-          (snapshot) => {
-            console.log('Real-time chat update received:', snapshot.docs.length);
-            
-            const updatedMessages = snapshot.docs.map(doc => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                userId: data.userId || '',
-                userName: data.userName || 'Unknown User',
-                userEmail: data.userEmail || '',
-                message: data.message || '',
-                isFromAdmin: data.isFromAdmin || false,
-                createdAt: data.createdAt || new Date().toISOString(),
-                isRead: data.isRead || false
-              } as ChatMessage;
-            });
-            
-            setChatMessages(updatedMessages);
-
-            // Show notification for new admin messages
-            const newAdminMessages = updatedMessages.filter(msg => 
-              msg.isFromAdmin && !msg.isRead && 
-              new Date(msg.createdAt).getTime() > Date.now() - 5000 // Last 5 seconds
-            );
-
-            if (newAdminMessages.length > 0) {
-              toast({
-                title: 'New message from Admin',
-                description: `You have ${newAdminMessages.length} new message(s)`,
-              });
-            }
-          },
-          (error) => {
-            console.error('Real-time chat listener error:', error);
-          }
-        );
+        console.log('Chat messages loaded successfully:', formattedMessages.length);
 
       } catch (error) {
         console.error('Error fetching chat messages:', error);
         setChatError('Unable to load chat messages. Please check your connection.');
         setChatLoading(false);
-        
-        // Fallback: try simple query without ordering
-        try {
-          console.log('Attempting fallback chat query...');
-          const fallbackSnapshot = await getDocs(collection(db, 'chatMessages'));
-          
-          const userMessages = fallbackSnapshot.docs
-            .filter(doc => doc.data().userId === currentUser.id)
-            .map(doc => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                userId: data.userId || '',
-                userName: data.userName || 'Unknown User',
-                userEmail: data.userEmail || '',
-                message: data.message || '',
-                isFromAdmin: data.isFromAdmin || false,
-                createdAt: data.createdAt || new Date().toISOString(),
-                isRead: data.isRead || false
-              } as ChatMessage;
-            })
-            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-            
-          setChatMessages(userMessages);
-          setChatError(null);
-          setChatLoading(false);
-          console.log('Fallback chat query successful:', userMessages.length);
-          
-        } catch (fallbackError) {
-          console.error('Fallback chat query also failed:', fallbackError);
-        }
       }
     };
 
     setupChatListener();
 
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('user-chat-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `user_id=eq.${currentUser.id}`
+        },
+        (payload) => {
+          console.log('Real-time chat update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newMessage: ChatMessage = {
+              id: payload.new.id,
+              userId: payload.new.user_id,
+              userName: payload.new.user_name,
+              userEmail: payload.new.user_email,
+              message: payload.new.message,
+              isFromAdmin: payload.new.is_from_admin,
+              createdAt: payload.new.created_at,
+              isRead: payload.new.is_read
+            };
+            
+            setChatMessages(prev => [...prev, newMessage]);
+            
+            // Show notification for new admin messages
+            if (newMessage.isFromAdmin) {
+              toast({
+                title: 'New message from Admin',
+                description: 'You have a new message',
+              });
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            setChatMessages(prev =>
+              prev.map(msg =>
+                msg.id === payload.new.id
+                  ? {
+                      ...msg,
+                      isRead: payload.new.is_read,
+                      message: payload.new.message
+                    }
+                  : msg
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setChatMessages(prev => prev.filter(msg => msg.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log('Cleaning up chat listener');
-      if (unsubscribeFn) {
-        unsubscribeFn();
-      }
+      supabase.removeChannel(channel);
     };
-  }, [currentUser, currentUser?.id]);
+  }, [currentUser]);
 
   useEffect(() => {
     if (chatSectionOpen && currentUser) {
@@ -241,13 +209,15 @@ const Dashboard = () => {
           );
 
           if (unreadAdminMessages.length > 0) {
-            const { updateDoc, doc } = await import('firebase/firestore');
+            const messageIds = unreadAdminMessages.map(msg => msg.id);
             
-            const updatePromises = unreadAdminMessages.map(msg =>
-              updateDoc(doc(db, 'chatMessages', msg.id), { isRead: true })
-            );
+            const { error } = await supabase
+              .from('chat_messages')
+              .update({ is_read: true })
+              .in('id', messageIds);
 
-            await Promise.all(updatePromises);
+            if (error) throw error;
+            
             console.log(`Marked ${unreadAdminMessages.length} admin messages as read`);
           }
         } catch (error) {
@@ -281,19 +251,18 @@ const Dashboard = () => {
     setIsSendingMessage(true);
     
     try {
-      const messageData = {
-        userId: currentUser.id,
-        userName: userData?.name || 'User',
-        userEmail: currentUser.email || '',
-        message: userMessage.trim(),
-        isFromAdmin: false,
-        createdAt: new Date().toISOString(),
-        isRead: false
-      };
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          user_id: currentUser.id,
+          user_name: userData?.name || 'User',
+          user_email: currentUser.email || '',
+          message: userMessage.trim(),
+          is_from_admin: false,
+          is_read: false
+        });
 
-      console.log('Sending message:', messageData);
-      
-      await addDoc(collection(db, 'chatMessages'), messageData);
+      if (error) throw error;
       
       setUserMessage('');
       toast({
