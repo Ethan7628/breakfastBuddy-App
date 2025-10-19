@@ -16,7 +16,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<{ data: any; error: any }>;
   logout: () => Promise<void>;
   updateUserBlock: (blockId: string) => Promise<void>;
 }
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const signup = async (email: string, password: string, name: string): Promise<void> => {
+  const signup = async (email: string, password: string, name: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -49,9 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    if (error) throw error;
-    
-    console.log('User signed up successfully:', data.user?.email);
+    if (error) {
+      console.error('Signup error:', error);
+    } else {
+      console.log('User signed up successfully:', data.user?.email);
+    }
+
+    return { data, error };
   };
 
   const login = async (email: string, password: string): Promise<void> => {

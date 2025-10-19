@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db, getAllCarts } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,12 +101,30 @@ const Admin = () => {
           setUsers([]);
         }
 
-        // Fetch all cart items
+        // Fetch all cart items from Supabase
         try {
-          console.log('Fetching cart items...');
-          const cartData = await getAllCarts();
-          console.log('Cart items fetched:', cartData.length);
-          setCartItems(cartData as CartItem[]);
+          console.log('Fetching cart items from Supabase...');
+          const { data: cartData, error } = await supabase
+            .from('cart_items')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error('Error fetching cart items from Supabase:', error);
+            setCartItems([]);
+          } else {
+            console.log('Cart items fetched from Supabase:', cartData?.length || 0);
+            const transformedCartItems: CartItem[] = (cartData || []).map(item => ({
+              id: item.id,
+              userId: item.user_id,
+              itemId: item.item_id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              addedAt: item.created_at
+            }));
+            setCartItems(transformedCartItems);
+          }
         } catch (cartError) {
           console.error('Error fetching cart items:', cartError);
           setCartItems([]);
@@ -483,22 +501,28 @@ const Admin = () => {
       let deletedOrders = 0;
       let deletedChats = 0;
 
-      // Try to clear cart items from Firebase (with error handling per document)
-      console.log('Attempting to clear cart items...');
+      // Clear Supabase cart items
+      console.log('Attempting to clear Supabase cart items...');
       try {
-        const cartSnapshot = await getDocs(collection(db, 'userCarts'));
-        console.log(`Found ${cartSnapshot.docs.length} cart items to delete`);
+        const { data: cartData, error: fetchError } = await supabase
+          .from('cart_items')
+          .select('id');
         
-        for (const cartDoc of cartSnapshot.docs) {
-          try {
-            await deleteDoc(doc(db, 'userCarts', cartDoc.id));
-            deletedCarts++;
-          } catch (docError) {
-            console.warn(`Could not delete cart item ${cartDoc.id}:`, docError);
+        if (!fetchError && cartData) {
+          const { error: deleteError } = await supabase
+            .from('cart_items')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all cart items
+          
+          if (deleteError) {
+            console.warn('Error clearing Supabase cart items:', deleteError);
+          } else {
+            deletedCarts = cartData.length;
+            console.log(`Successfully cleared ${deletedCarts} Supabase cart items`);
           }
         }
       } catch (cartError) {
-        console.warn('Error accessing cart collection:', cartError);
+        console.warn('Error accessing Supabase cart items:', cartError);
       }
 
       // Clear Supabase orders
@@ -547,13 +571,13 @@ const Admin = () => {
       
       if (totalDeleted > 0) {
         toast({
-          title: 'Partial Reset Complete!',
-          description: `Successfully deleted ${deletedCarts} cart items, ${deletedOrders} orders, and ${deletedChats} chat messages. Supabase orders were cleared earlier.`,
+          title: 'Reset Complete!',
+          description: `Successfully deleted ${deletedCarts} cart items, ${deletedOrders} orders, and ${deletedChats} chat messages from Supabase.`,
         });
       } else {
         toast({
           title: 'Admin View Cleared!',
-          description: 'Admin display has been reset. Note: Firebase permissions may prevent bulk deletion. Supabase orders were cleared earlier.',
+          description: 'Admin display has been reset. All Supabase data was cleared.',
           variant: 'default'
         });
       }

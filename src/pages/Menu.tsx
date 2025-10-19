@@ -6,9 +6,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { addToUserCart, getUserCart, removeFromUserCart, CartItem } from '@/lib/firebase';
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { PaymentDialog } from '@/components/PaymentDialog';
 import { playNotificationSound } from '@/utils/soundNotification';
 import { supabase } from '@/integrations/supabase/client';
@@ -78,18 +75,24 @@ const Menu = () => {
     queryFn: fetchBreakfastMeals,
   });
 
-  // Load user's cart from Firestore
+  // Load user's cart from Supabase
   useEffect(() => {
     const loadCart = async () => {
       if (currentUser?.id) {
         try {
           console.log('Loading cart for user:', currentUser.id);
-          const cartItems: CartItem[] = await getUserCart(currentUser.id);
-          console.log('Loaded cart items:', cartItems);
+          const { data: cartItems, error } = await supabase
+            .from('cart_items')
+            .select('*')
+            .eq('user_id', currentUser.id);
+
+          if (error) throw error;
+
+          console.log('Loaded cart items:', cartItems?.length || 0);
 
           const cartMap: Record<string, number> = {};
-          cartItems.forEach((item) => {
-            cartMap[item.itemId] = (cartMap[item.itemId] || 0) + (item.quantity || 1);
+          (cartItems || []).forEach((item) => {
+            cartMap[item.item_id] = (cartMap[item.item_id] || 0) + item.quantity;
           });
           setCart(cartMap);
         } catch (err) {
@@ -134,14 +137,17 @@ const Menu = () => {
     try {
       console.log('Adding item to cart:', item);
 
-      await addToUserCart(
-        currentUser.id,
-        itemId,
-        {
+      const { error } = await supabase
+        .from('cart_items')
+        .insert({
+          user_id: currentUser.id,
+          item_id: itemId,
           name: item.name,
-          price: item.price
-        }
-      );
+          price: item.price,
+          quantity: 1
+        });
+
+      if (error) throw error;
 
       // Update local state
       setCart(prev => ({
@@ -184,9 +190,24 @@ const Menu = () => {
     console.log('Starting removeFromCart process:', { itemId, userUid: currentUser.id });
 
     try {
-      const success = await removeFromUserCart(currentUser.id, itemId);
-      
-      if (success) {
+      // Get one cart item to delete
+      const { data: cartItems, error: fetchError } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('item_id', itemId)
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      if (cartItems && cartItems.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('cart_items')
+          .delete()
+          .eq('id', cartItems[0].id);
+
+        if (deleteError) throw deleteError;
+
         // Update local state
         setCart(prev => {
           const newCart = { ...prev };
@@ -204,7 +225,7 @@ const Menu = () => {
           description: `${item.name} has been removed from your cart`
         });
       } else {
-        console.log('Remove operation returned false');
+        console.log('No matching cart items found');
         toast({
           title: 'Item not found in cart',
           description: 'The item may have already been removed',
@@ -225,19 +246,12 @@ const Menu = () => {
     if (!currentUser?.id) return;
 
     try {
-      // Get all cart items for this user
-      const cartQuery = query(
-        collection(db, 'userCarts'),
-        where('userId', '==', currentUser.id)
-      );
-      const cartSnapshot = await getDocs(cartQuery);
+      const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', currentUser.id);
 
-      // Delete all cart items
-      const deletePromises = cartSnapshot.docs.map(docSnapshot =>
-        deleteDoc(doc(db, 'userCarts', docSnapshot.id))
-      );
-
-      await Promise.all(deletePromises);
+      if (error) throw error;
       console.log('Cart cleared successfully');
     } catch (error) {
       console.error('Error clearing cart:', error);
@@ -279,7 +293,7 @@ const Menu = () => {
 
   const handlePaymentSuccess = async () => {
     try {
-      // Clear cart from Firebase after successful payment
+      // Clear cart from Supabase after successful payment
       await clearUserCart();
       setCart({});
 
