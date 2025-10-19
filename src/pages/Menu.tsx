@@ -525,6 +525,7 @@ const Menu = () => {
         isOpen={isPaymentDialogOpen}
         onClose={() => setIsPaymentDialogOpen(false)}
         cartItems={cart}
+        menuItems={menuItems}
         totalAmount={getTotalPrice()}
         onPaymentSuccess={handlePaymentSuccess}
       />

@@ -17,7 +17,6 @@ interface User {
   uid: string;
   email: string;
   name: string;
-  isAdmin: boolean;
   selectedBlock?: string;
   createdAt: string;
 }
@@ -86,16 +85,28 @@ const Admin = () => {
         console.log('Fetching admin data...');
         setLoading(true);
         
-        // Fetch users
+        // Fetch users from Supabase
         try {
-          console.log('Fetching users...');
-          const usersSnapshot = await getDocs(collection(db, 'users'));
-          const usersData = usersSnapshot.docs.map(doc => ({ 
-            uid: doc.id, 
-            ...doc.data() 
-          } as User));
-          console.log('Users fetched:', usersData.length);
-          setUsers(usersData);
+          console.log('Fetching users from Supabase...');
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (profilesError) {
+            console.error('Error fetching profiles:', profilesError);
+            setUsers([]);
+          } else {
+            console.log('Profiles fetched:', profilesData?.length || 0);
+            const usersData: User[] = (profilesData || []).map(profile => ({
+              uid: profile.id,
+              email: profile.email,
+              name: profile.name,
+              selectedBlock: profile.selected_block || undefined,
+              createdAt: profile.created_at
+            }));
+            setUsers(usersData);
+          }
         } catch (userError) {
           console.error('Error fetching users:', userError);
           setUsers([]);
@@ -600,30 +611,6 @@ const Admin = () => {
     }
   };
 
-  const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
-    try {
-      await updateDoc(doc(db, 'users', userId), {
-        isAdmin: !currentStatus
-      });
-
-      setUsers(users.map(user =>
-        user.uid === userId ? { ...user, isAdmin: !currentStatus } : user
-      ));
-
-      toast({
-        title: 'Success',
-        description: `User admin status ${!currentStatus ? 'granted' : 'revoked'}`,
-      });
-    } catch (error) {
-      console.error('Error updating admin status:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update admin status',
-        variant: 'destructive'
-      });
-    }
-  };
-
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase
@@ -688,7 +675,6 @@ const Admin = () => {
   }
 
   const totalUsers = users.length;
-  const adminUsers = users.filter(u => u.isAdmin).length;
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount / 100), 0);
   const totalUnreadMessages = userChats.reduce((sum, chat) => sum + chat.unreadCount, 0);
@@ -711,8 +697,8 @@ const Admin = () => {
           
           <Card>
             <CardContent className="p-6">
-              <div className="admin-stat-label">Admin Users</div>
-              <div className="admin-stat-value">{adminUsers}</div>
+              <div className="admin-stat-label">Unread Messages</div>
+              <div className="admin-stat-value">{totalUnreadMessages}</div>
             </CardContent>
           </Card>
           
@@ -868,9 +854,8 @@ const Admin = () => {
                   <tr className="border-b">
                     <th className="text-left py-2 text-breakfast-800">Name</th>
                     <th className="text-left py-2 text-breakfast-800">Email</th>
-                    <th className="text-left py-2 text-breakfast-800">Admin</th>
+                    <th className="text-left py-2 text-breakfast-800">Block</th>
                     <th className="text-left py-2 text-breakfast-800">Created</th>
-                    <th className="text-left py-2 text-breakfast-800">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -878,25 +863,9 @@ const Admin = () => {
                     <tr key={user.uid} className="border-b">
                       <td className="py-3 text-breakfast-800">{user.name || 'No name'}</td>
                       <td className="text-breakfast-600">{user.email}</td>
-                      <td>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          user.isAdmin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {user.isAdmin ? 'Yes' : 'No'}
-                        </span>
-                      </td>
+                      <td className="text-breakfast-600">{user.selectedBlock || 'Not set'}</td>
                       <td className="text-breakfast-600 text-sm">
                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
-                      </td>
-                      <td>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => toggleAdminStatus(user.uid, user.isAdmin)}
-                          className="text-xs"
-                        >
-                          {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
-                        </Button>
                       </td>
                     </tr>
                   ))}
