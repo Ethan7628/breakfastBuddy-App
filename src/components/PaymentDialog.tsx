@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CreditCard, Smartphone, Loader2 } from 'lucide-react';
+import { CreditCard, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +24,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   totalAmount,
   onPaymentSuccess
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<'card' | 'mobile_money'>('card');
+  const [selectedMethod] = useState<'card'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -56,23 +56,17 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         };
       });
 
-      console.log('Creating payment with:', {
-        firebaseUserId: currentUser.id,
+      console.log('Creating Stripe payment with:', {
         items,
-        totalAmount,
-        paymentMethod: selectedMethod
+        totalAmount
       });
 
-      // Create payment with Flutterwave
-      const { data, error } = await supabase.functions.invoke('create-payment', {
+      // Create payment with Stripe
+      const { data, error } = await supabase.functions.invoke('create-stripe-payment', {
         body: {
-          firebaseUserId: currentUser.id,
           items,
-          totalAmount,
-          paymentMethod: selectedMethod,
           customerEmail: currentUser.email || 'customer@example.com',
           customerName: currentUser.user_metadata?.name || 'Customer',
-          customerPhone: currentUser.user_metadata?.phone || '',
         }
       });
 
@@ -81,13 +75,13 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         throw new Error(error.message || 'Failed to create payment');
       }
 
-      console.log('Flutterwave payment created:', data);
+      console.log('Stripe payment created:', data);
 
-      // Redirect to Flutterwave payment page
-      if (data.paymentLink) {
-        window.location.href = data.paymentLink;
+      // Redirect to Stripe Checkout
+      if (data.sessionUrl) {
+        window.location.href = data.sessionUrl;
       } else {
-        throw new Error('No payment link received');
+        throw new Error('No payment URL received');
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -114,35 +108,13 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
 
           <div className="space-y-3">
             <Card 
-              className={`p-4 cursor-pointer border-2 transition-colors ${
-                selectedMethod === 'card' 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-              onClick={() => setSelectedMethod('card')}
+              className="p-4 border-2 border-primary bg-primary/5"
             >
               <div className="flex items-center space-x-3">
                 <CreditCard className="w-6 h-6" />
                 <div>
-                  <div className="font-semibold">Credit/Debit Card</div>
-                  <div className="text-sm text-gray-600">Visa, Mastercard, etc.</div>
-                </div>
-              </div>
-            </Card>
-
-            <Card 
-              className={`p-4 cursor-pointer border-2 transition-colors ${
-                selectedMethod === 'mobile_money' 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-              onClick={() => setSelectedMethod('mobile_money')}
-            >
-              <div className="flex items-center space-x-3">
-                <Smartphone className="w-6 h-6" />
-                <div>
-                  <div className="font-semibold">Mobile Money</div>
-                  <div className="text-sm text-gray-600">MTN, Airtel Money</div>
+                  <div className="font-semibold">Secure Card Payment</div>
+                  <div className="text-sm text-gray-600">Powered by Stripe - Visa, Mastercard, Amex</div>
                 </div>
               </div>
             </Card>
