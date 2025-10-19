@@ -11,6 +11,7 @@ interface PaymentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   cartItems: Record<string, number>;
+  menuItems: Array<{ id: string; name: string; price: number }>;
   totalAmount: number;
   onPaymentSuccess: () => void;
 }
@@ -19,6 +20,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   isOpen,
   onClose,
   cartItems,
+  menuItems,
   totalAmount,
   onPaymentSuccess
 }) => {
@@ -40,11 +42,19 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
     setIsProcessing(true);
 
     try {
-      // Prepare cart items for the API
-      const items = Object.entries(cartItems).map(([itemId, quantity]) => ({
-        id: itemId,
-        quantity
-      }));
+      // Prepare cart items with full details for the API
+      const items = Object.entries(cartItems).map(([itemId, quantity]) => {
+        const menuItem = menuItems.find(item => item.id === itemId);
+        if (!menuItem) {
+          throw new Error(`Menu item not found: ${itemId}`);
+        }
+        return {
+          id: itemId,
+          name: menuItem.name,
+          price: menuItem.price,
+          quantity
+        };
+      });
 
       console.log('Creating payment with:', {
         firebaseUserId: currentUser.id,
