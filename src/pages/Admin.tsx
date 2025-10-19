@@ -112,12 +112,13 @@ const Admin = () => {
           setCartItems([]);
         }
 
-        // Fetch all orders from Supabase
+        // Fetch all orders from Supabase (only orders with valid user_id)
         try {
           console.log('Fetching all orders from Supabase...');
           const { data: ordersData, error } = await supabase
             .from('orders')
             .select('*')
+            .not('user_id', 'is', null)
             .order('created_at', { ascending: false });
 
           if (error) {
