@@ -39,23 +39,33 @@ const Signup = () => {
 
     try {
       setLoading(true);
-      await signup(email, password, name);
+      const result = await signup(email, password, name);
+
+      if (result.error) {
+        toast({
+          title: 'Signup failed',
+          description: result.error.message || 'Please try again.',
+          variant: 'destructive'
+        });
+        return;
+      }
 
       toast({
-        title: 'Account created successfully!',
+        title: 'Account created!',
+        description: 'Please check your email to confirm your account before logging in.',
         variant: 'default'
       });
 
-      // Navigate after toast is shown
-      setTimeout(() => navigate('/dashboard'), 1000);
+      // Navigate to login after showing message
+      setTimeout(() => navigate('/login'), 2000);
 
     } catch (error) {
       console.error('Signup error:', error);
-      // toast({
-      //   title: 'Signup failed',
-      //   description: error instanceof Error ? error.message : 'Please try again.',
-      //   variant: 'destructive'
-      // });
+      toast({
+        title: 'Signup failed',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
