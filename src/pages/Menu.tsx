@@ -363,25 +363,30 @@ const Menu = () => {
         ))}
       </div>
 
-      {/* Cart Summary */}
+      {/* Cart Summary - Enhanced Visibility */}
       {getTotalItems() > 0 && (
-        <Card className="menu-cart-summary border-breakfast-200">
-          <CardContent className="menu-cart-content">
-            <div className="menu-cart-row">
-              <div>
-                <span className="menu-cart-label text-breakfast-700">
-                  Cart: {getTotalItems()} items
-                </span>
-                <span className="menu-cart-total text-breakfast-800 font-bold">
-                  Total: UGX {getTotalPrice().toLocaleString()}
-                </span>
+        <Card className="sticky top-20 z-10 shadow-lg border-2 border-breakfast-400 bg-gradient-to-r from-breakfast-50 to-amber-100 mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div className="bg-white rounded-full p-3 shadow-md">
+                  <span className="text-2xl">🛒</span>
+                </div>
+                <div className="text-center sm:text-left">
+                  <div className="text-lg font-bold text-breakfast-800">
+                    {getTotalItems()} {getTotalItems() === 1 ? 'Item' : 'Items'} in Cart
+                  </div>
+                  <div className="text-2xl font-extrabold text-breakfast-900">
+                    UGX {getTotalPrice().toLocaleString()}
+                  </div>
+                </div>
               </div>
               <Button
-                className="breakfast-gradient text-white"
+                className="breakfast-gradient text-white text-lg px-8 py-6 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all w-full sm:w-auto"
                 onClick={handleCheckout}
                 disabled={isCheckingOut}
               >
-                {isCheckingOut ? 'Processing...' : 'Checkout'}
+                {isCheckingOut ? 'Processing...' : '🔒 Proceed to Checkout'}
               </Button>
             </div>
           </CardContent>

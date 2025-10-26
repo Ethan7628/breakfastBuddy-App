@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
       .from('orders')
       .insert({
         user_id: user.id,
+        old_firebase_user_id: user.id, // Required field for backward compatibility
         items: items,
         total_amount: totalAmount,
         currency: 'UGX',
