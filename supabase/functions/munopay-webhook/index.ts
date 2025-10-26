@@ -14,6 +14,23 @@ Deno.serve(async (req) => {
   try {
     console.log('[MUNOPAY-WEBHOOK] Webhook received');
 
+    // Verify webhook signature
+    const webhookKey = Deno.env.get('MUNOPAY_WEBHOOK_KEY');
+    const signature = req.headers.get('x-munopay-signature') || req.headers.get('authorization');
+    
+    if (webhookKey && signature) {
+      // Remove 'Bearer ' prefix if present
+      const cleanSignature = signature.replace('Bearer ', '');
+      if (cleanSignature !== webhookKey) {
+        console.error('[MUNOPAY-WEBHOOK] Invalid signature');
+        return new Response(
+          JSON.stringify({ error: 'Invalid signature' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      console.log('[MUNOPAY-WEBHOOK] Signature verified');
+    }
+
     // Parse webhook payload
     const payload = await req.json();
     console.log('[MUNOPAY-WEBHOOK] Payload:', JSON.stringify(payload, null, 2));
