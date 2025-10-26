@@ -5,3 +5,9 @@ verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.create-munopay-payment]
+verify_jwt = true
+
+[functions.munopay-webhook]
+verify_jwt = false
