@@ -39,11 +39,12 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
       return;
     }
 
-    // Validate phone number
-    if (!phoneNumber.match(/^256\d{9}$/)) {
+    // Sanitize and validate phone number
+    const sanitizedPhone = phoneNumber.replace(/[\s\-\+]/g, '');
+    if (!sanitizedPhone.match(/^256\d{9}$/)) {
       toast({
         title: "Invalid Phone Number",
-        description: "Please enter a valid phone number starting with 256 (e.g., 256771234567)",
+        description: "Please enter a valid Uganda phone number (e.g., 256712345678)",
         variant: "destructive"
       });
       return;
@@ -66,45 +67,43 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         };
       });
 
-      // Create payment with MunoPay
-      console.log('Creating MunoPay payment with:', {
-        items,
-        phone: phoneNumber,
-        totalAmount
-      });
+      console.log('Creating MunoPay payment with:', { items, phone: sanitizedPhone, totalAmount });
 
       const { data, error } = await supabase.functions.invoke('create-munopay-payment', {
         body: {
           items,
-          phone: phoneNumber,
+          phone: sanitizedPhone,
           customerEmail: currentUser.email || 'customer@example.com',
           customerName: currentUser.user_metadata?.name || 'Customer',
         }
       });
+
+      console.log('MunoPay response:', { data, error });
 
       if (error) {
         console.error('Payment creation error:', error);
         throw new Error(error.message || 'Failed to create payment');
       }
 
-      console.log('MunoPay payment created:', data);
-
-      toast({
-        title: "Payment Request Sent",
-        description: "Please check your phone to approve the mobile money payment.",
-      });
-
-      // Close dialog and refresh after a delay
-      setTimeout(() => {
-        onPaymentSuccess();
-        onClose();
-      }, 2000);
+      if (data?.success) {
+        toast({
+          title: "Payment Request Sent",
+          description: "Please check your phone to approve the mobile money payment.",
+        });
+        setTimeout(() => {
+          onPaymentSuccess();
+          onClose();
+        }, 2000);
+      } else {
+        throw new Error(data?.error?.message || 'Payment request failed');
+      }
 
     } catch (error) {
       console.error('Payment error:', error);
+      const errorMessage = error instanceof Error ? error.message : "An error occurred during payment.";
       toast({
         title: "Payment Failed",
-        description: error instanceof Error ? error.message : "An error occurred during payment.",
+        description: errorMessage,
         variant: "destructive"
       });
       setIsProcessing(false);

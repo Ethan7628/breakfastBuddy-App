@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Missing authorization header');
       throw new Error('No authorization header');
     }
 
@@ -42,6 +43,7 @@ Deno.serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Auth error:', authError);
       throw new Error('Unauthorized');
     }
 
@@ -50,10 +52,34 @@ Deno.serve(async (req) => {
     // Parse request body
     const body: PaymentRequest = await req.json();
     const { items, phone, customerEmail, customerName } = body;
+    
+    console.log('[CREATE-MUNOPAY-PAYMENT] Request body:', { 
+      itemsCount: items?.length, 
+      phone, 
+      customerEmail, 
+      customerName 
+    });
 
-    // Validate phone number
-    if (!phone || !phone.match(/^256\d{9}$/)) {
-      throw new Error('Invalid phone number. Must be in format 256XXXXXXXXX');
+    // Validate and sanitize phone number
+    if (!phone) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Missing phone number');
+      throw new Error('Phone number is required');
+    }
+
+    // Sanitize phone number - remove spaces, dashes, and plus signs
+    const sanitizedPhone = phone.replace(/[\s\-\+]/g, '');
+    console.log('[CREATE-MUNOPAY-PAYMENT] Original phone:', phone, 'Sanitized:', sanitizedPhone);
+
+    // Validate phone format (256XXXXXXXXX for Uganda)
+    if (!sanitizedPhone.match(/^256\d{9}$/)) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Invalid phone format:', sanitizedPhone);
+      throw new Error(`Invalid phone number format. Expected 256XXXXXXXXX, got: ${sanitizedPhone}`);
+    }
+
+    // Validate items
+    if (!items || items.length === 0) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Empty or missing items array');
+      throw new Error('Cart items are required');
     }
 
     // Calculate total from items
@@ -61,7 +87,14 @@ Deno.serve(async (req) => {
 
     console.log('[CREATE-MUNOPAY-PAYMENT] Total amount:', totalAmount, 'UGX');
 
+    // Validate total amount
+    if (totalAmount <= 0) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Invalid amount:', totalAmount);
+      throw new Error('Total amount must be greater than 0');
+    }
+
     // Create order in database first
+    console.log('[CREATE-MUNOPAY-PAYMENT] Creating order for user:', user.id);
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -77,26 +110,29 @@ Deno.serve(async (req) => {
 
     if (orderError) {
       console.error('[CREATE-MUNOPAY-PAYMENT] Order creation error:', orderError);
-      throw new Error('Failed to create order');
+      throw new Error(`Failed to create order: ${orderError.message}`);
     }
 
-    console.log('[CREATE-MUNOPAY-PAYMENT] Order created:', order.id);
+    console.log('[CREATE-MUNOPAY-PAYMENT] Order created successfully:', order.id);
 
     // Create MunoPay payment request
     const munoPayApiKey = Deno.env.get('MUNOPAY_SECRET_KEY');
     if (!munoPayApiKey) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay API key not configured');
       throw new Error('MunoPay API key not configured');
     }
+
+    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay API key found:', munoPayApiKey.substring(0, 10) + '...');
 
     const paymentPayload = {
       amount: totalAmount,
       currency: 'UGX',
-      phone: phone,
+      phone: sanitizedPhone,
       description: `Order #${order.id.substring(0, 8)}`,
       reference: order.id,
     };
 
-    console.log('[CREATE-MUNOPAY-PAYMENT] Creating MunoPay payment:', paymentPayload);
+    console.log('[CREATE-MUNOPAY-PAYMENT] Creating MunoPay payment with payload:', JSON.stringify(paymentPayload, null, 2));
 
     const munoPayResponse = await fetch('https://api.munopay.com/v1/payments', {
       method: 'POST',
@@ -107,25 +143,55 @@ Deno.serve(async (req) => {
       body: JSON.stringify(paymentPayload),
     });
 
+    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay response status:', munoPayResponse.status);
+    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay response headers:', JSON.stringify(Object.fromEntries(munoPayResponse.headers)));
+
+    const responseText = await munoPayResponse.text();
+    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay raw response:', responseText);
+
     if (!munoPayResponse.ok) {
-      const errorText = await munoPayResponse.text();
-      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay API error:', errorText);
-      throw new Error(`MunoPay API error: ${munoPayResponse.status}`);
+      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay API error. Status:', munoPayResponse.status, 'Body:', responseText);
+      
+      // Try to parse error response
+      let errorMessage = `MunoPay API error (${munoPayResponse.status})`;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || errorMessage;
+        console.error('[CREATE-MUNOPAY-PAYMENT] Parsed error:', errorData);
+      } catch (e) {
+        console.error('[CREATE-MUNOPAY-PAYMENT] Could not parse error response');
+      }
+      
+      throw new Error(errorMessage);
     }
 
-    const munoPayData = await munoPayResponse.json();
-    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay response:', munoPayData);
+    let munoPayData;
+    try {
+      munoPayData = JSON.parse(responseText);
+      console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay success response:', JSON.stringify(munoPayData, null, 2));
+    } catch (e) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Failed to parse MunoPay response:', e);
+      throw new Error('Invalid response from MunoPay API');
+    }
 
     // Update order with transaction ID
     if (munoPayData.transaction_id) {
-      await supabase
+      console.log('[CREATE-MUNOPAY-PAYMENT] Updating order with transaction ID:', munoPayData.transaction_id);
+      const { error: updateError } = await supabase
         .from('orders')
         .update({ 
           stripe_payment_intent_id: munoPayData.transaction_id // Reusing this field for MunoPay transaction ID
         })
         .eq('id', order.id);
+      
+      if (updateError) {
+        console.error('[CREATE-MUNOPAY-PAYMENT] Failed to update order with transaction ID:', updateError);
+      } else {
+        console.log('[CREATE-MUNOPAY-PAYMENT] Order updated successfully');
+      }
     }
 
+    console.log('[CREATE-MUNOPAY-PAYMENT] Payment request successful');
     return new Response(
       JSON.stringify({
         success: true,
@@ -141,11 +207,14 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[CREATE-MUNOPAY-PAYMENT] Unexpected error:', error);
+    console.error('[CREATE-MUNOPAY-PAYMENT] Error stack:', error instanceof Error ? error.stack : 'N/A');
+    
     return new Response(
       JSON.stringify({
         success: false,
         error: {
-          message: error instanceof Error ? error.message : 'Unknown error',
+          message: error instanceof Error ? error.message : 'Unknown error occurred',
+          details: error instanceof Error ? error.stack : undefined,
         },
       }),
       { 
