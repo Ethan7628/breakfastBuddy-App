@@ -5,6 +5,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Get MunoPay API base URL from environment or use default
+const MUNOPAY_API_BASE = Deno.env.get('MUNOPAY_API_BASE') || 'https://payments.munopay.com/api/v1';
+
+// Helper function to check if MunoPay API is reachable
+async function checkMunoPayConnectivity(): Promise<boolean> {
+  try {
+    const response = await fetch(MUNOPAY_API_BASE, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+    return response.status < 500;
+  } catch (error) {
+    console.error('[CREATE-MUNOPAY-PAYMENT] Connectivity check failed:', error);
+    return false;
+  }
+}
+
+// Helper function to retry fetch with exponential backoff
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2): Promise<Response> {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (error) {
+      lastError = error;
+      console.error(`[CREATE-MUNOPAY-PAYMENT] Attempt ${attempt + 1} failed:`, error);
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+}
+
 interface PaymentItem {
   id: string;
   name: string;
@@ -93,6 +126,14 @@ Deno.serve(async (req) => {
       throw new Error('Total amount must be greater than 0');
     }
 
+    // Check MunoPay connectivity before proceeding
+    console.log('[CREATE-MUNOPAY-PAYMENT] Checking MunoPay connectivity...');
+    const isConnectable = await checkMunoPayConnectivity();
+    if (!isConnectable) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay service is unreachable');
+      throw new Error('gateway_unreachable');
+    }
+
     // Create order in database first
     console.log('[CREATE-MUNOPAY-PAYMENT] Creating order for user:', user.id);
     const { data: order, error: orderError } = await supabase
@@ -134,7 +175,10 @@ Deno.serve(async (req) => {
 
     console.log('[CREATE-MUNOPAY-PAYMENT] Creating MunoPay payment with payload:', JSON.stringify(paymentPayload, null, 2));
 
-    const munoPayResponse = await fetch('https://api.munopay.com/v1/payments', {
+    const munoPayUrl = `${MUNOPAY_API_BASE}/payments`;
+    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay URL:', munoPayUrl);
+
+    const munoPayResponse = await fetchWithRetry(munoPayUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -209,11 +253,28 @@ Deno.serve(async (req) => {
     console.error('[CREATE-MUNOPAY-PAYMENT] Unexpected error:', error);
     console.error('[CREATE-MUNOPAY-PAYMENT] Error stack:', error instanceof Error ? error.stack : 'N/A');
     
+    // Classify error types
+    let errorCode = 'payment_failed';
+    let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
+    if (errorMessage === 'gateway_unreachable') {
+      errorCode = 'gateway_unreachable';
+      errorMessage = 'Payment gateway is currently unreachable. Please try again later.';
+    } else if (errorMessage.includes('dns error') || errorMessage.includes('lookup address')) {
+      errorCode = 'gateway_unreachable';
+      errorMessage = 'Payment gateway is currently unreachable. Please try again later.';
+    } else if (errorMessage.includes('Phone number')) {
+      errorCode = 'invalid_phone';
+    } else if (errorMessage.includes('Unauthorized') || errorMessage.includes('authorization')) {
+      errorCode = 'unauthorized';
+    }
+    
     return new Response(
       JSON.stringify({
         success: false,
         error: {
-          message: error instanceof Error ? error.message : 'Unknown error occurred',
+          code: errorCode,
+          message: errorMessage,
           details: error instanceof Error ? error.stack : undefined,
         },
       }),

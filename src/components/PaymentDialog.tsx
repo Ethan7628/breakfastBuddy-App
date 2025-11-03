@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -69,7 +69,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
 
       console.log('Creating MunoPay payment with:', { items, phone: sanitizedPhone, totalAmount });
 
-      const { data, error } = await supabase.functions.invoke('create-munopay-payment', {
+      const response = await supabase.functions.invoke('create-munopay-payment', {
         body: {
           items,
           phone: sanitizedPhone,
@@ -78,25 +78,38 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         }
       });
 
-      console.log('MunoPay response:', { data, error });
+      console.log('MunoPay response:', response);
 
-      if (error) {
-        console.error('Payment creation error:', error);
-        throw new Error(error.message || 'Failed to create payment');
+      if (response.error) {
+        console.error('Payment creation error:', response.error);
+        throw response.error;
       }
 
-      if (data?.success) {
-        toast({
-          title: "Payment Request Sent",
-          description: "Please check your phone to approve the mobile money payment.",
-        });
-        setTimeout(() => {
-          onPaymentSuccess();
-          onClose();
-        }, 2000);
-      } else {
-        throw new Error(data?.error?.message || 'Payment request failed');
+      if (!response.data?.success) {
+        const errorCode = response.data?.error?.code;
+        const errorMessage = response.data?.error?.message;
+        
+        // Provide user-friendly error messages
+        if (errorCode === 'gateway_unreachable') {
+          throw new Error('Payment gateway is temporarily unavailable. Please try again in a few moments.');
+        } else if (errorCode === 'invalid_phone') {
+          throw new Error('Invalid phone number format. Please use format: 256XXXXXXXXX');
+        } else if (errorCode === 'unauthorized') {
+          throw new Error('Authentication failed. Please log in again.');
+        }
+        
+        throw new Error(errorMessage || 'Payment failed. Please try again.');
       }
+
+      toast({
+        title: "Payment Request Sent",
+        description: "Please check your phone to approve the mobile money payment.",
+      });
+      
+      setTimeout(() => {
+        onPaymentSuccess();
+        onClose();
+      }, 2000);
 
     } catch (error) {
       console.error('Payment error:', error);
@@ -112,9 +125,12 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-amber-50">
+      <DialogContent className="sm:max-w-md bg-amber-50" aria-describedby="payment-description">
         <DialogHeader>
           <DialogTitle>Mobile Money Payment</DialogTitle>
+          <DialogDescription id="payment-description">
+            Enter your mobile money number to complete the payment
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
