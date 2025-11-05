@@ -165,17 +165,26 @@ Deno.serve(async (req) => {
 
     console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay API key found:', munoPayApiKey.substring(0, 10) + '...');
 
+    // Get MunoPay account number from environment
+    const munoPayAccountNumber = Deno.env.get('MUNOPAY_ACCOUNT_NUMBER');
+    if (!munoPayAccountNumber) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay account number not configured');
+      throw new Error('MunoPay account number not configured');
+    }
+
     const paymentPayload = {
-      amount: totalAmount,
-      currency: 'UGX',
-      phone: sanitizedPhone,
-      description: `Order #${order.id.substring(0, 8)}`,
+      account_number: munoPayAccountNumber,
       reference: order.id,
+      phone: sanitizedPhone,
+      amount: totalAmount,
+      description: `Order #${order.id.substring(0, 8)}`,
+      email: customerEmail,
+      names: customerName,
     };
 
     console.log('[CREATE-MUNOPAY-PAYMENT] Creating MunoPay payment with payload:', JSON.stringify(paymentPayload, null, 2));
 
-    const munoPayUrl = `${MUNOPAY_API_BASE}/payments`;
+    const munoPayUrl = `${MUNOPAY_API_BASE}/deposit`;
     console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay URL:', munoPayUrl);
 
     const munoPayResponse = await fetchWithRetry(munoPayUrl, {
