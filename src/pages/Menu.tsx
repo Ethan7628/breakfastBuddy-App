@@ -56,7 +56,7 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
   }));
 };
 
-const categories = ['All', 'Breakfast Special', 'Popular'];
+const categories = ['All', 'Breakfast Special', 'Popular', 'Lunch', 'Snacks', 'Beverages', 'Desserts'];
 
 const Menu = () => {
   const { currentUser, userData } = useAuth();

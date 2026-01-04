@@ -115,19 +115,51 @@ export const MenuManager = () => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     
-    const { error: uploadError } = await supabase.storage
+    console.log('Uploading image:', fileName, 'to bucket: menu-images');
+    
+    // First try to upload - if bucket doesn't exist, create it
+    let uploadResult = await supabase.storage
       .from('menu-images')
       .upload(fileName, file);
-
-    if (uploadError) {
-      console.error('Error uploading image:', uploadError);
-      throw new Error('Failed to upload image');
+    
+    if (uploadResult.error) {
+      console.log('Upload failed, checking bucket:', uploadResult.error);
+      
+      // Check if it's a bucket not found error
+      if (uploadResult.error.message?.includes('not found') || uploadResult.error.message?.includes('bucket')) {
+        console.log('Bucket not found, creating...');
+        
+        const { error: createError } = await supabase.storage.createBucket('menu-images', {
+          public: true
+        });
+        
+        if (createError) {
+          console.error('Failed to create bucket:', createError);
+          throw new Error('Storage setup failed');
+        }
+        
+        console.log('Bucket created, retrying upload...');
+        // Retry upload
+        uploadResult = await supabase.storage
+          .from('menu-images')
+          .upload(fileName, file);
+          
+        if (uploadResult.error) {
+          console.error('Retry upload failed:', uploadResult.error);
+          throw new Error('Failed to upload image after bucket creation');
+        }
+      } else {
+        console.error('Upload error:', uploadResult.error);
+        throw new Error('Failed to upload image');
+      }
     }
 
     const { data: { publicUrl } } = supabase.storage
       .from('menu-images')
       .getPublicUrl(fileName);
 
+    console.log('Generated public URL:', publicUrl);
+    
     return publicUrl;
   };
 
@@ -156,6 +188,27 @@ export const MenuManager = () => {
     setIsSubmitting(true);
 
     try {
+      // Check if user has admin role before proceeding
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to add menu items');
+      }
+
+      const { data: isAdminCheck, error: roleError } = await supabase.rpc('has_role', {
+        _user_id: session.user.id,
+        _role: 'admin'
+      });
+
+      if (roleError) {
+        console.error('Role check error:', roleError);
+        throw new Error('Unable to verify admin permissions');
+      }
+
+      if (!isAdminCheck) {
+        throw new Error('You must be an admin to add menu items');
+      }
+
+      console.log('User is admin, proceeding with insert...');
       let imageUrl = editingItem?.image_url || null;
 
       // Upload new image if provided
@@ -164,6 +217,7 @@ export const MenuManager = () => {
       }
 
       const menuData: {
+        id: string;
         name: string;
         description: string | null;
         price: number;
@@ -173,6 +227,7 @@ export const MenuManager = () => {
         popular: boolean;
         image_url: string | null;
       } = {
+        id: editingItem?.id || `menu_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         price: price,
@@ -198,10 +253,22 @@ export const MenuManager = () => {
         });
       } else {
         // Create new item - use type assertion for new columns not yet in generated types
+        console.log('Inserting menu item:', menuData);
         const { error } = await supabase
           .from('menu_items')
-          .insert(menuData as any);
+          .insert({
+            id: menuData.id,
+            name: menuData.name,
+            description: menuData.description,
+            price: menuData.price,
+            category: menuData.category,
+            preparation_time: menuData.preparation_time,
+            ingredients: menuData.ingredients,
+            popular: menuData.popular,
+            image_url: menuData.image_url
+          });
 
+        console.log('Insert error:', error);
         if (error) throw error;
 
         toast({
@@ -220,7 +287,7 @@ export const MenuManager = () => {
       console.error('Error saving menu item:', error);
       toast({
         title: 'Error saving menu item',
-        description: 'Please try again',
+        description: error instanceof Error ? error.message : 'Please try again',
         variant: 'destructive'
       });
     } finally {

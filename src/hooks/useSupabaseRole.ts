@@ -26,17 +26,24 @@ export const useSupabaseRole = () => {
         }
 
         // Check if user has admin role using the has_role function
+        console.log('Checking admin role for user:', session.user.id);
         const { data, error } = await supabase.rpc('has_role', {
           _user_id: session.user.id,
           _role: 'admin'
         });
 
+        console.log('has_role result:', { data, error });
+
+        let isUserAdmin = false;
+
         if (error) {
-          console.error('Error checking admin role:', error);
-          setIsAdmin(false);
+          console.error('Error checking admin role via RPC:', error);
         } else {
-          setIsAdmin(data || false);
+          isUserAdmin = data || false;
+          console.log('isAdmin set to:', isUserAdmin);
         }
+
+        setIsAdmin(isUserAdmin);
       } catch (error) {
         console.error('Error checking admin role:', error);
         setIsAdmin(false);
