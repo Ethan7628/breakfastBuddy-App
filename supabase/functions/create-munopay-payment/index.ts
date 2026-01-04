@@ -61,29 +61,98 @@ Deno.serve(async (req) => {
   try {
     console.log('[CREATE-MUNOPAY-PAYMENT] Function started');
 
-    // Get authenticated user
+    // Get authenticated user - FIXED AUTHENTICATION FLOW
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('[CREATE-MUNOPAY-PAYMENT] Missing authorization header');
-      throw new Error('No authorization header');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'unauthorized',
+            message: 'Missing authorization header'
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401
+        }
+      );
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Extract token from header
+    const token = authHeader.replace('Bearer ', '');
+    if (!token) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Invalid authorization header format');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'unauthorized',
+            message: 'Invalid authorization header format'
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401
+        }
+      );
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Initialize Supabase client with service key for server-side auth
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); // Use service role key for server-side operations
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] Missing Supabase configuration');
+      throw new Error('Server configuration error');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify the user's token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
     if (authError || !user) {
       console.error('[CREATE-MUNOPAY-PAYMENT] Auth error:', authError);
-      throw new Error('Unauthorized');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'unauthorized',
+            message: 'Invalid or expired token'
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401
+        }
+      );
     }
 
-    console.log('[CREATE-MUNOPAY-PAYMENT] Authenticated user:', user.id);
+    console.log('[CREATE-MUNOPAY-PAYMENT] Authenticated user:', user.id, user.email);
 
     // Parse request body
-    const body: PaymentRequest = await req.json();
+    let body: PaymentRequest;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('[CREATE-MUNOPAY-PAYMENT] JSON parse error:', parseError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'invalid_request',
+            message: 'Invalid JSON in request body'
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
+    }
+
     const { items, phone, customerEmail, customerName } = body;
     
     console.log('[CREATE-MUNOPAY-PAYMENT] Request body:', { 
@@ -96,7 +165,19 @@ Deno.serve(async (req) => {
     // Validate and sanitize phone number
     if (!phone) {
       console.error('[CREATE-MUNOPAY-PAYMENT] Missing phone number');
-      throw new Error('Phone number is required');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'invalid_phone',
+            message: 'Phone number is required'
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
 
     // Sanitize phone number - remove spaces, dashes, and plus signs
@@ -106,13 +187,37 @@ Deno.serve(async (req) => {
     // Validate phone format (256XXXXXXXXX for Uganda)
     if (!sanitizedPhone.match(/^256\d{9}$/)) {
       console.error('[CREATE-MUNOPAY-PAYMENT] Invalid phone format:', sanitizedPhone);
-      throw new Error(`Invalid phone number format. Expected 256XXXXXXXXX, got: ${sanitizedPhone}`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'invalid_phone',
+            message: `Invalid phone number format. Expected 256XXXXXXXXX, got: ${sanitizedPhone}`
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
 
     // Validate items
     if (!items || items.length === 0) {
       console.error('[CREATE-MUNOPAY-PAYMENT] Empty or missing items array');
-      throw new Error('Cart items are required');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'invalid_items',
+            message: 'Cart items are required'
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
 
     // Calculate total from items
@@ -123,7 +228,19 @@ Deno.serve(async (req) => {
     // Validate total amount
     if (totalAmount <= 0) {
       console.error('[CREATE-MUNOPAY-PAYMENT] Invalid amount:', totalAmount);
-      throw new Error('Total amount must be greater than 0');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'invalid_amount',
+            message: 'Total amount must be greater than 0'
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
 
     // Check MunoPay connectivity before proceeding
@@ -131,7 +248,19 @@ Deno.serve(async (req) => {
     const isConnectable = await checkMunoPayConnectivity();
     if (!isConnectable) {
       console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay service is unreachable');
-      throw new Error('gateway_unreachable');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'gateway_unreachable',
+            message: 'Payment gateway is currently unreachable. Please try again later.'
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 503
+        }
+      );
     }
 
     // Create order in database first
@@ -197,7 +326,6 @@ Deno.serve(async (req) => {
     });
 
     console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay response status:', munoPayResponse.status);
-    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay response headers:', JSON.stringify(Object.fromEntries(munoPayResponse.headers)));
 
     const responseText = await munoPayResponse.text();
     console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay raw response:', responseText);
@@ -265,17 +393,21 @@ Deno.serve(async (req) => {
     // Classify error types
     let errorCode = 'payment_failed';
     let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    let statusCode = 400;
     
-    if (errorMessage === 'gateway_unreachable') {
+    if (errorMessage.includes('gateway_unreachable')) {
       errorCode = 'gateway_unreachable';
-      errorMessage = 'Payment gateway is currently unreachable. Please try again later.';
+      statusCode = 503;
     } else if (errorMessage.includes('dns error') || errorMessage.includes('lookup address')) {
       errorCode = 'gateway_unreachable';
-      errorMessage = 'Payment gateway is currently unreachable. Please try again later.';
-    } else if (errorMessage.includes('Phone number')) {
+      statusCode = 503;
+    } else if (errorMessage.includes('Phone number') || errorMessage.includes('phone')) {
       errorCode = 'invalid_phone';
     } else if (errorMessage.includes('Unauthorized') || errorMessage.includes('authorization')) {
       errorCode = 'unauthorized';
+      statusCode = 401;
+    } else if (errorMessage.includes('JSON parse')) {
+      errorCode = 'invalid_request';
     }
     
     return new Response(
@@ -284,12 +416,12 @@ Deno.serve(async (req) => {
         error: {
           code: errorCode,
           message: errorMessage,
-          details: error instanceof Error ? error.stack : undefined,
+          details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined,
         },
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: statusCode,
       }
     );
   }
