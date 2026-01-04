@@ -11,13 +11,6 @@ import { playNotificationSound } from '@/utils/soundNotification';
 import { supabase } from '@/integrations/supabase/client';
 import '../styles/Menu.css';
 
-interface MealItem {
-  idMeal: string;
-  strMeal: string;
-  strMealThumb: string;
-  strInstructions: string;
-}
-
 interface MenuItem {
   id: string;
   name: string;
@@ -26,6 +19,8 @@ interface MenuItem {
   category: string;
   image: string;
   popular?: boolean;
+  preparationTime?: string;
+  ingredients?: string;
 }
 
 const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
@@ -55,7 +50,9 @@ const fetchBreakfastMeals = async (): Promise<MenuItem[]> => {
     price: item.price,
     category: item.category || 'Breakfast Special',
     image: item.image_url || '',
-    popular: item.popular || false
+    popular: item.popular || false,
+    preparationTime: item.preparation_time || '',
+    ingredients: item.ingredients || ''
   }));
 };
 
@@ -478,21 +475,39 @@ const Menu = () => {
                   )}
                 </div>
 
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap gap-2">
                   <span className="text-2xl font-bold text-breakfast-800">
                     UG Shs {selectedItem.price.toLocaleString()}
                   </span>
-                  <span className="text-sm text-breakfast-600 bg-breakfast-100 px-3 py-1 rounded-full">
-                    {selectedItem.category}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {selectedItem.preparationTime && (
+                      <span className="text-sm text-breakfast-600 bg-breakfast-100 px-3 py-1 rounded-full">
+                        ⏱ {selectedItem.preparationTime}
+                      </span>
+                    )}
+                    <span className="text-sm text-breakfast-600 bg-breakfast-100 px-3 py-1 rounded-full">
+                      {selectedItem.category}
+                    </span>
+                  </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-breakfast-800 mb-2">Description</h3>
-                  <p className="text-breakfast-600 leading-relaxed">
-                    {selectedItem.description}
-                  </p>
-                </div>
+                {selectedItem.ingredients && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-breakfast-800 mb-2">What's Included</h3>
+                    <p className="text-breakfast-600 leading-relaxed">
+                      {selectedItem.ingredients}
+                    </p>
+                  </div>
+                )}
+
+                {selectedItem.description && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-breakfast-800 mb-2">Description</h3>
+                    <p className="text-breakfast-600 leading-relaxed">
+                      {selectedItem.description}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="shrink-0 flex items-center justify-between pt-4 border-t border-breakfast-200 mt-4">
