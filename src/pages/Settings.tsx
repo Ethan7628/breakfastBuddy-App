@@ -210,11 +210,11 @@ const Settings = () => {
               </div>
               <div className="settings-info-item">
                 <span className="settings-info-label">Last Update</span>
-                <span className="settings-info-value">September 2025</span>
+                <span className="settings-info-value">January 2026</span>
               </div>
               <div className="settings-info-item">
                 <span className="settings-info-label">Build Number</span>
-                <span className="settings-info-value">2025.01.02</span>
+                <span className="settings-info-value">2026.02</span>
               </div>
             </div>
           </CardContent>

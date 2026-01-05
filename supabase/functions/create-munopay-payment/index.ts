@@ -1,428 +1,283 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Get MunoPay API base URL from environment or use default
-const MUNOPAY_API_BASE = Deno.env.get('MUNOPAY_API_BASE') || 'https://payments.munopay.com/api/v1';
-
-// Helper function to check if MunoPay API is reachable
-async function checkMunoPayConnectivity(): Promise<boolean> {
-  try {
-    const response = await fetch(MUNOPAY_API_BASE, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
-    return response.status < 500;
-  } catch (error) {
-    console.error('[CREATE-MUNOPAY-PAYMENT] Connectivity check failed:', error);
-    return false;
-  }
-}
-
-// Helper function to retry fetch with exponential backoff
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2): Promise<Response> {
-  let lastError;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await fetch(url, options);
-      return response;
-    } catch (error) {
-      lastError = error;
-      console.error(`[CREATE-MUNOPAY-PAYMENT] Attempt ${attempt + 1} failed:`, error);
-      if (attempt < maxRetries) {
-        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  throw lastError;
-}
-
-interface PaymentItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-interface PaymentRequest {
-  items: PaymentItem[];
-  phone: string;
-  customerEmail: string;
-  customerName: string;
-}
-
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('[CREATE-MUNOPAY-PAYMENT] Function started');
-
-    // Get authenticated user - FIXED AUTHENTICATION FLOW
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Missing authorization header');
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'unauthorized',
-            message: 'Missing authorization header'
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401
-        }
-      );
-    }
-
-    // Extract token from header
-    const token = authHeader.replace('Bearer ', '');
-    if (!token) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Invalid authorization header format');
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'unauthorized',
-            message: 'Invalid authorization header format'
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401
-        }
-      );
-    }
-
-    // Initialize Supabase client with service key for server-side auth
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); // Use service role key for server-side operations
+    console.log("=== CREATE-MUNOPAY-PAYMENT STARTED ===");
+    
+    // Get environment variables
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const munoPayApiKey = Deno.env.get("MUNOPAY_API_KEY");
+    const munoPayAccountNumber = Deno.env.get("MUNOPAY_ACCOUNT_NUMBER");
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Missing Supabase configuration');
-      throw new Error('Server configuration error');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify the user's token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Auth error:', authError);
+      console.error("Missing Supabase configuration");
       return new Response(
-        JSON.stringify({
+        JSON.stringify({ 
           success: false,
-          error: {
-            code: 'unauthorized',
-            message: 'Invalid or expired token'
-          }
+          error: "Server configuration error" 
         }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401
-        }
+        { headers: corsHeaders, status: 500 }
       );
     }
-
-    console.log('[CREATE-MUNOPAY-PAYMENT] Authenticated user:', user.id, user.email);
 
     // Parse request body
-    let body: PaymentRequest;
-    try {
-      body = await req.json();
-    } catch (parseError) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] JSON parse error:', parseError);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'invalid_request',
-            message: 'Invalid JSON in request body'
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      );
-    }
-
-    const { items, phone, customerEmail, customerName } = body;
+    const body = await req.json();
+    console.log("Received body:", JSON.stringify(body, null, 2));
     
-    console.log('[CREATE-MUNOPAY-PAYMENT] Request body:', { 
-      itemsCount: items?.length, 
-      phone, 
-      customerEmail, 
-      customerName 
-    });
+    // Extract fields
+    const phone = body?.phone;
+    const totalAmount = body?.totalAmount || body?.amount;
+    const items = body?.items || [];
+    const customerEmail = body?.customerEmail || '';
+    const customerName = body?.customerName || '';
 
-    // Validate and sanitize phone number
-    if (!phone) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Missing phone number');
+    // Validate
+    if (!phone || !totalAmount) {
       return new Response(
-        JSON.stringify({
+        JSON.stringify({ 
           success: false,
-          error: {
-            code: 'invalid_phone',
-            message: 'Phone number is required'
-          }
+          error: "Phone and amount are required" 
         }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
+        { headers: corsHeaders, status: 400 }
       );
     }
 
-    // Sanitize phone number - remove spaces, dashes, and plus signs
-    const sanitizedPhone = phone.replace(/[\s\-\+]/g, '');
-    console.log('[CREATE-MUNOPAY-PAYMENT] Original phone:', phone, 'Sanitized:', sanitizedPhone);
-
-    // Validate phone format (256XXXXXXXXX for Uganda)
-    if (!sanitizedPhone.match(/^256\d{9}$/)) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Invalid phone format:', sanitizedPhone);
+    const amount = Number(totalAmount);
+    if (isNaN(amount) || amount <= 0) {
       return new Response(
-        JSON.stringify({
+        JSON.stringify({ 
           success: false,
-          error: {
-            code: 'invalid_phone',
-            message: `Invalid phone number format. Expected 256XXXXXXXXX, got: ${sanitizedPhone}`
-          }
+          error: "Valid amount required (> 0)" 
         }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
+        { headers: corsHeaders, status: 400 }
       );
     }
 
-    // Validate items
-    if (!items || items.length === 0) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Empty or missing items array');
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'invalid_items',
-            message: 'Cart items are required'
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
+    // Format phone (MunoPay expects 256XXXXXXXXX)
+    const formatPhone = (phone: string): string => {
+      let cleaned = phone.replace(/\D/g, "");
+      if (cleaned.startsWith("0")) {
+        return "256" + cleaned.substring(1);
+      } else if (!cleaned.startsWith("256")) {
+        return "256" + cleaned;
+      }
+      return cleaned;
+    };
+
+    const formattedPhone = formatPhone(phone);
+    console.log("Formatted phone:", formattedPhone);
+
+    // Initialize Supabase
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user ID from JWT
+    const authHeader = req.headers.get("Authorization");
+    let userId = crypto.randomUUID();
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      try {
+        const base64Url = token.split('.')[1];
+        if (base64Url) {
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(atob(base64));
+          userId = payload.sub || userId;
         }
-      );
+      } catch (e) {
+        console.log("Using generated user ID");
+      }
     }
 
-    // Calculate total from items
-    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    console.log('[CREATE-MUNOPAY-PAYMENT] Total amount:', totalAmount, 'UGX');
-
-    // Validate total amount
-    if (totalAmount <= 0) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Invalid amount:', totalAmount);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'invalid_amount',
-            message: 'Total amount must be greater than 0'
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      );
-    }
-
-    // Check MunoPay connectivity before proceeding
-    console.log('[CREATE-MUNOPAY-PAYMENT] Checking MunoPay connectivity...');
-    const isConnectable = await checkMunoPayConnectivity();
-    if (!isConnectable) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay service is unreachable');
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'gateway_unreachable',
-            message: 'Payment gateway is currently unreachable. Please try again later.'
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 503
-        }
-      );
-    }
-
-    // Create order in database first
-    console.log('[CREATE-MUNOPAY-PAYMENT] Creating order for user:', user.id);
-    const { data: order, error: orderError } = await supabase
+    // ========== 1. CREATE ORDER IN DATABASE ==========
+    console.log("Creating order...");
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
-        user_id: user.id,
-        old_firebase_user_id: user.id, // Required field for backward compatibility
+        user_id: userId,
         items: items,
-        total_amount: totalAmount,
+        total_amount: amount,
         currency: 'UGX',
-        payment_status: 'pending',
+        payment_status: 'initiated',
+        customer_phone: formattedPhone,
+        customer_email: customerEmail || '',
+        customer_name: customerName || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
-      .select()
+      .select('id')
       .single();
 
     if (orderError) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Order creation error:', orderError);
-      throw new Error(`Failed to create order: ${orderError.message}`);
+      throw new Error(`Order creation failed: ${orderError.message}`);
     }
 
-    console.log('[CREATE-MUNOPAY-PAYMENT] Order created successfully:', order.id);
+    console.log("Order created:", order.id);
 
-    // Create MunoPay payment request
-    const munoPayApiKey = Deno.env.get('MUNOPAY_SECRET_KEY');
-    if (!munoPayApiKey) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay API key not configured');
-      throw new Error('MunoPay API key not configured');
-    }
-
-    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay API key found:', munoPayApiKey.substring(0, 10) + '...');
-
-    // Get MunoPay account number from environment
-    const munoPayAccountNumber = Deno.env.get('MUNOPAY_ACCOUNT_NUMBER');
-    if (!munoPayAccountNumber) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay account number not configured');
-      throw new Error('MunoPay account number not configured');
-    }
-
-    const paymentPayload = {
-      account_number: munoPayAccountNumber,
-      reference: order.id,
-      phone: sanitizedPhone,
-      amount: totalAmount,
-      description: `Order #${order.id.substring(0, 8)}`,
-      email: customerEmail,
-      names: customerName,
-    };
-
-    console.log('[CREATE-MUNOPAY-PAYMENT] Creating MunoPay payment with payload:', JSON.stringify(paymentPayload, null, 2));
-
-    const munoPayUrl = `${MUNOPAY_API_BASE}/deposit`;
-    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay URL:', munoPayUrl);
-
-    const munoPayResponse = await fetchWithRetry(munoPayUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${munoPayApiKey}`,
-      },
-      body: JSON.stringify(paymentPayload),
-    });
-
-    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay response status:', munoPayResponse.status);
-
-    const responseText = await munoPayResponse.text();
-    console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay raw response:', responseText);
-
-    if (!munoPayResponse.ok) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] MunoPay API error. Status:', munoPayResponse.status, 'Body:', responseText);
+    // ========== 2. CHECK IF MUNOPAY IS CONFIGURED ==========
+    if (!munoPayApiKey || !munoPayAccountNumber) {
+      console.log("MunoPay not configured");
       
-      // Try to parse error response
-      let errorMessage = `MunoPay API error (${munoPayResponse.status})`;
-      try {
-        const errorData = JSON.parse(responseText);
-        errorMessage = errorData.message || errorData.error || errorMessage;
-        console.error('[CREATE-MUNOPAY-PAYMENT] Parsed error:', errorData);
-      } catch (e) {
-        console.error('[CREATE-MUNOPAY-PAYMENT] Could not parse error response');
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    let munoPayData;
-    try {
-      munoPayData = JSON.parse(responseText);
-      console.log('[CREATE-MUNOPAY-PAYMENT] MunoPay success response:', JSON.stringify(munoPayData, null, 2));
-    } catch (e) {
-      console.error('[CREATE-MUNOPAY-PAYMENT] Failed to parse MunoPay response:', e);
-      throw new Error('Invalid response from MunoPay API');
-    }
-
-    // Update order with transaction ID
-    if (munoPayData.transaction_id) {
-      console.log('[CREATE-MUNOPAY-PAYMENT] Updating order with transaction ID:', munoPayData.transaction_id);
-      const { error: updateError } = await supabase
+      await supabaseAdmin
         .from('orders')
-        .update({ 
-          stripe_payment_intent_id: munoPayData.transaction_id // Reusing this field for MunoPay transaction ID
+        .update({
+          payment_status: 'gateway_not_configured'
         })
         .eq('id', order.id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Order created but MunoPay not configured",
+          data: {
+            orderId: order.id,
+            amount: amount,
+            phone: formattedPhone,
+            status: "order_created",
+            note: "Configure MUNOPAY_API_KEY and MUNOPAY_ACCOUNT_NUMBER environment variables"
+          }
+        }),
+        { headers: corsHeaders }
+      );
+    }
+
+    // ========== 3. CALL REAL MUNOPAY API ==========
+    console.log("Calling MunoPay API to initiate payment...");
+    
+    // Prepare MunoPay request according to their API documentation
+    const munoPayPayload = {
+      account_number: munoPayAccountNumber,
+      reference: `ORDER-${order.id.substring(0, 8)}-${Date.now()}`,
+      phone: formattedPhone,
+      amount: amount,
+      currency: 'UGX',
+      email: customerEmail || '',
+      names: customerName || '',
+      description: `Payment for order ${order.id.substring(0, 8)}`
+    };
+
+    console.log("MunoPay payload:", munoPayPayload);
+
+    const munoPayUrl = "https://payments.munopay.com/api/v1/deposit";
+    console.log("Calling MunoPay at:", munoPayUrl);
+
+    try {
+      const munoPayResponse = await fetch(munoPayUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${munoPayApiKey}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(munoPayPayload),
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+
+      console.log("MunoPay response status:", munoPayResponse.status);
+
+      if (!munoPayResponse.ok) {
+        const errorText = await munoPayResponse.text();
+        console.error("MunoPay API error:", munoPayResponse.status, errorText);
+        
+        // Update order to failed status
+        await supabaseAdmin
+          .from('orders')
+          .update({
+            payment_status: 'failed',
+            payment_gateway_response: { 
+              status: munoPayResponse.status,
+              error: errorText
+            }
+          })
+          .eq('id', order.id);
+
+        throw new Error(`MunoPay API error (${munoPayResponse.status}): ${errorText.substring(0, 100)}`);
+      }
+
+      const munoPayData = await munoPayResponse.json();
+      console.log("MunoPay success response:", munoPayData);
+
+      // ========== 4. UPDATE ORDER WITH MUNOPAY TRANSACTION ==========
+      await supabaseAdmin
+        .from('orders')
+        .update({
+          payment_status: 'pending',
+          stripe_payment_intent_id: munoPayData.transaction_id || munoPayData.payment_id || munoPayData.id,
+          payment_gateway: 'munopay',
+          payment_gateway_response: munoPayData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', order.id);
+
+      // ========== 5. RETURN SUCCESS ==========
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Payment initiated successfully",
+          data: {
+            orderId: order.id,
+            transactionId: munoPayData.transaction_id || munoPayData.payment_id || munoPayData.id,
+            amount: amount,
+            phone: formattedPhone,
+            instructions: munoPayData.instructions || "Check your phone for payment prompt",
+            reference: munoPayData.reference || munoPayPayload.reference,
+            paymentStatus: "pending",
+            note: "Please approve the payment on your phone"
+          }
+        }),
+        { headers: corsHeaders }
+      );
+
+    } catch (munoPayError: any) {
+      console.error("MunoPay API call failed:", munoPayError);
       
-      if (updateError) {
-        console.error('[CREATE-MUNOPAY-PAYMENT] Failed to update order with transaction ID:', updateError);
-      } else {
-        console.log('[CREATE-MUNOPAY-PAYMENT] Order updated successfully');
-      }
+      // Update order to reflect gateway issue
+      await supabaseAdmin
+        .from('orders')
+        .update({
+          payment_status: 'gateway_error',
+          payment_gateway_response: { 
+            error: munoPayError.message
+          }
+        })
+        .eq('id', order.id);
+
+      // Return order created but payment failed
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Order created but payment gateway error",
+          data: {
+            orderId: order.id,
+            amount: amount,
+            phone: formattedPhone,
+            status: "order_created_gateway_error",
+            note: `Order saved. Payment gateway error: ${munoPayError.message}. Contact support.`
+          }
+        }),
+        { headers: corsHeaders }
+      );
     }
 
-    console.log('[CREATE-MUNOPAY-PAYMENT] Payment request successful');
-    return new Response(
-      JSON.stringify({
-        success: true,
-        orderId: order.id,
-        transactionId: munoPayData.transaction_id,
-        data: munoPayData,
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
-
-  } catch (error) {
-    console.error('[CREATE-MUNOPAY-PAYMENT] Unexpected error:', error);
-    console.error('[CREATE-MUNOPAY-PAYMENT] Error stack:', error instanceof Error ? error.stack : 'N/A');
-    
-    // Classify error types
-    let errorCode = 'payment_failed';
-    let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    let statusCode = 400;
-    
-    if (errorMessage.includes('gateway_unreachable')) {
-      errorCode = 'gateway_unreachable';
-      statusCode = 503;
-    } else if (errorMessage.includes('dns error') || errorMessage.includes('lookup address')) {
-      errorCode = 'gateway_unreachable';
-      statusCode = 503;
-    } else if (errorMessage.includes('Phone number') || errorMessage.includes('phone')) {
-      errorCode = 'invalid_phone';
-    } else if (errorMessage.includes('Unauthorized') || errorMessage.includes('authorization')) {
-      errorCode = 'unauthorized';
-      statusCode = 401;
-    } else if (errorMessage.includes('JSON parse')) {
-      errorCode = 'invalid_request';
-    }
+  } catch (error: any) {
+    console.error("Error:", error);
     
     return new Response(
       JSON.stringify({
         success: false,
-        error: {
-          code: errorCode,
-          message: errorMessage,
-          details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined,
-        },
+        error: error.message || "Payment processing failed",
+        note: "Please try again or contact support"
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: statusCode,
-      }
+      { headers: corsHeaders, status: 500 }
     );
   }
 });

@@ -550,35 +550,7 @@ const Menu = () => {
         onPaymentSuccess={handlePaymentSuccess}
       />
 
-      {/* Sticky Bottom Checkout Bar */}
-      {getTotalItems() > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-breakfast-600 to-amber-600 shadow-2xl border-t-4 border-breakfast-700">
-          <div className="max-w-6xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
-                  <span className="text-2xl">🛒</span>
-                </div>
-                <div className="text-white">
-                  <div className="text-sm font-medium opacity-90">
-                    {getTotalItems()} {getTotalItems() === 1 ? 'Item' : 'Items'}
-                  </div>
-                  <div className="text-xl font-bold">
-                    UGX {getTotalPrice().toLocaleString()}
-                  </div>
-                </div>
-              </div>
-              <Button
-                className="bg-white text-breakfast-700 hover:bg-breakfast-50 font-bold px-6 py-6 text-lg shadow-xl transform hover:scale-105 transition-all"
-                onClick={handleCheckout}
-                disabled={isCheckingOut}
-              >
-                {isCheckingOut ? 'Processing...' : '🔒 Checkout'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };

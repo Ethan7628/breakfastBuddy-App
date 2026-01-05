@@ -444,7 +444,7 @@ export const MenuManager = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-amber-50">
           <DialogHeader>
             <DialogTitle className="text-amber-800">
               {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
@@ -456,35 +456,35 @@ export const MenuManager = () => {
             <div className="space-y-2">
               <Label>Meal Image</Label>
               <div className="border-2 border-dashed border-amber-200 rounded-lg p-4 text-center">
-                {formData.imagePreview ? (
-                  <div className="relative">
-                    <img
-                      src={formData.imagePreview}
-                      alt="Preview"
-                      className="w-full h-40 object-cover rounded-lg"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => setFormData(prev => ({ ...prev, image: null, imagePreview: '' }))}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ) : (
-                  <label className="cursor-pointer block py-8">
-                    <ImageIcon className="h-10 w-10 mx-auto text-amber-400 mb-2" />
-                    <span className="text-amber-600">Click to upload image</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
-                  </label>
-                )}
+          {formData.imagePreview ? (
+            <div className="relative">
+              <img
+                src={formData.imagePreview}
+                alt="Preview"
+                className="w-full h-40 object-cover rounded-lg"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => setFormData(prev => ({ ...prev, image: null, imagePreview: '' }))}
+              >
+                Remove
+              </Button>
+            </div>
+          ) : (
+            <label className="cursor-pointer block py-8">
+              <ImageIcon className="h-10 w-10 mx-auto text-amber-400 mb-2" />
+              <span className="text-amber-600">Click to upload image</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
+          )}
               </div>
             </div>
 
@@ -492,11 +492,11 @@ export const MenuManager = () => {
             <div className="space-y-2">
               <Label htmlFor="name">Meal Name *</Label>
               <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Eggs Benedict"
-                required
+          id="name"
+          value={formData.name}
+          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          placeholder="e.g., Eggs Benedict"
+          required
               />
             </div>
 
@@ -504,13 +504,13 @@ export const MenuManager = () => {
             <div className="space-y-2">
               <Label htmlFor="price">Price (UGX) *</Label>
               <Input
-                id="price"
-                type="number"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                placeholder="e.g., 15000"
-                required
-                min="1"
+          id="price"
+          type="number"
+          value={formData.price}
+          onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+          placeholder="e.g., 15000"
+          required
+          min="1"
               />
             </div>
 
@@ -518,17 +518,17 @@ export const MenuManager = () => {
             <div className="space-y-2">
               <Label>Category</Label>
               <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+          value={formData.category}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((cat) => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
               </Select>
             </div>
 
@@ -536,10 +536,10 @@ export const MenuManager = () => {
             <div className="space-y-2">
               <Label htmlFor="prepTime">Preparation Time</Label>
               <Input
-                id="prepTime"
-                value={formData.preparation_time}
-                onChange={(e) => setFormData(prev => ({ ...prev, preparation_time: e.target.value }))}
-                placeholder="e.g., 15-20 mins"
+          id="prepTime"
+          value={formData.preparation_time}
+          onChange={(e) => setFormData(prev => ({ ...prev, preparation_time: e.target.value }))}
+          placeholder="e.g., 15-20 mins"
               />
             </div>
 
@@ -547,11 +547,11 @@ export const MenuManager = () => {
             <div className="space-y-2">
               <Label htmlFor="ingredients">What it Includes</Label>
               <Textarea
-                id="ingredients"
-                value={formData.ingredients}
-                onChange={(e) => setFormData(prev => ({ ...prev, ingredients: e.target.value }))}
-                placeholder="e.g., 2 eggs, bacon, hollandaise sauce, English muffin"
-                rows={2}
+          id="ingredients"
+          value={formData.ingredients}
+          onChange={(e) => setFormData(prev => ({ ...prev, ingredients: e.target.value }))}
+          placeholder="e.g., 2 eggs, bacon, hollandaise sauce, English muffin"
+          rows={2}
               />
             </div>
 
@@ -559,11 +559,11 @@ export const MenuManager = () => {
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="A brief description of the meal..."
-                rows={3}
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          placeholder="A brief description of the meal..."
+          rows={3}
               />
             </div>
 
@@ -571,27 +571,27 @@ export const MenuManager = () => {
             <div className="flex items-center justify-between">
               <Label htmlFor="popular">Mark as Popular</Label>
               <Switch
-                id="popular"
-                checked={formData.popular}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, popular: checked }))}
+          id="popular"
+          checked={formData.popular}
+          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, popular: checked }))}
               />
             </div>
 
             <DialogFooter>
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
+          type="button"
+          variant="outline"
+          onClick={() => setIsDialogOpen(false)}
               >
-                Cancel
+          Cancel
               </Button>
               <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="breakfast-gradient text-white"
+          type="submit"
+          disabled={isSubmitting}
+          className="breakfast-gradient text-white"
               >
-                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {editingItem ? 'Update Item' : 'Add Item'}
+          {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {editingItem ? 'Update Item' : 'Add Item'}
               </Button>
             </DialogFooter>
           </form>
