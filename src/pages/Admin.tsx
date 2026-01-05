@@ -674,7 +674,7 @@ const Admin = () => {
 
   const totalUsers = users.length;
   const totalOrders = orders.length;
-  const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount / 100), 0);
+  const totalRevenue = orders.reduce((sum, order) => sum + order.total_amount, 0);
   const totalUnreadMessages = userChats.reduce((sum, chat) => sum + chat.unreadCount, 0);
 
   const selectedChatData = selectedChat ? userChats.find(chat => chat.userId === selectedChat) : null;
