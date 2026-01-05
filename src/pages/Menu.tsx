@@ -288,6 +288,25 @@ const Menu = () => {
     setIsPaymentDialogOpen(true);
   };
 
+  // Parse location for display
+  const getDeliveryLocationDisplay = () => {
+    if (!userData?.selectedBlock) return 'your location';
+    
+    try {
+      const parsed = JSON.parse(userData.selectedBlock);
+      if (parsed.address) {
+        // Truncate long addresses
+        return parsed.address.length > 40 
+          ? parsed.address.substring(0, 40) + '...' 
+          : parsed.address;
+      }
+    } catch {
+      // Legacy format
+      return userData.selectedBlock;
+    }
+    return 'your location';
+  };
+
   const handlePaymentSuccess = async () => {
     try {
       // Clear cart from Supabase after successful payment
@@ -297,7 +316,7 @@ const Menu = () => {
       // Show success message
       toast({
         title: "Order placed successfully!",
-        description: `Your order of ${getTotalItems()} items has been placed and paid for. Delivery to ${userData?.selectedBlock || 'your location'}.`,
+        description: `Your order of ${getTotalItems()} items has been placed and paid for. Delivery to ${getDeliveryLocationDisplay()}.`,
       });
 
       // Play notification sound
