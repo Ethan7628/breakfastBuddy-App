@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { playNotificationSound } from '@/utils/soundNotification';
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,105 +78,147 @@ const Admin = () => {
   const { userData } = useAuth();
   const { isAdmin } = useSupabaseRole();
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    try {
+      console.log('Fetching admin data...');
+      setLoading(true);
+
+      // Fetch users from Supabase
       try {
-        console.log('Fetching admin data...');
-        setLoading(true);
+        console.log('Fetching users from Supabase...');
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-        // Fetch users from Supabase
-        try {
-          console.log('Fetching users from Supabase...');
-          const { data: profilesData, error: profilesError } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-          if (profilesError) {
-            console.error('Error fetching profiles:', profilesError);
-            setUsers([]);
-          } else {
-            console.log('Profiles fetched:', profilesData?.length || 0);
-            const usersData: User[] = (profilesData || []).map(profile => ({
-              uid: profile.id,
-              email: profile.email,
-              name: profile.name,
-              selectedBlock: profile.selected_block || undefined,
-              createdAt: profile.created_at
-            }));
-            setUsers(usersData);
-          }
-        } catch (userError) {
-          console.error('Error fetching users:', userError);
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
           setUsers([]);
+        } else {
+          console.log('Profiles fetched:', profilesData?.length || 0);
+          const usersData: User[] = (profilesData || []).map(profile => ({
+            uid: profile.id,
+            email: profile.email,
+            name: profile.name || 'No name',
+            selectedBlock: profile.selected_block || undefined,
+            createdAt: profile.created_at
+            
+          }));
+          setUsers(usersData);
         }
+      } catch (userError) {
+        console.error('Error fetching users:', userError);
+        setUsers([]);
+      }
 
-        // Fetch all cart items from Supabase
-        try {
-          console.log('Fetching cart items from Supabase...');
-          const { data: cartData, error } = await supabase
-            .from('cart_items')
-            .select('*')
-            .order('created_at', { ascending: false });
+      // Fetch all cart items from Supabase
+      try {
+        console.log('Fetching cart items from Supabase...');
+        const { data: cartData, error } = await supabase
+          .from('cart_items')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-          if (error) {
-            console.error('Error fetching cart items from Supabase:', error);
-            setCartItems([]);
-          } else {
-            console.log('Cart items fetched from Supabase:', cartData?.length || 0);
-            const transformedCartItems: CartItem[] = (cartData || []).map(item => ({
-              id: item.id,
-              userId: item.user_id,
-              itemId: item.item_id,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              addedAt: item.created_at
-            }));
-            setCartItems(transformedCartItems);
-          }
-        } catch (cartError) {
-          console.error('Error fetching cart items:', cartError);
+        if (error) {
+          console.error('Error fetching cart items from Supabase:', error);
           setCartItems([]);
+        } else {
+          console.log('Cart items fetched from Supabase:', cartData?.length || 0);
+          const transformedCartItems: CartItem[] = (cartData || []).map(item => ({
+            id: item.id,
+            userId: item.user_id,
+            itemId: item.item_id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            addedAt: item.created_at
+          }));
+          setCartItems(transformedCartItems);
         }
+      } catch (cartError) {
+        console.error('Error fetching cart items:', cartError);
+        setCartItems([]);
+      }
 
-        // Fetch all orders from Supabase (only orders with valid user_id)
-        try {
-          console.log('Fetching all orders from Supabase...');
-          const { data: ordersData, error } = await supabase
-            .from('orders')
-            .select('*')
-            .not('user_id', 'is', null)
-            .order('created_at', { ascending: false });
+      // Fetch all orders from Supabase (only orders with valid user_id)
+      try {
+        console.log('Fetching all orders from Supabase...');
+        const { data: ordersData, error } = await supabase
+          .from('orders')
+          .select('*')
+          .not('user_id', 'is', null)
+          .order('created_at', { ascending: false });
 
-          if (error) {
-            console.error('Error fetching orders from Supabase:', error);
-            setOrders([]);
-          } else {
-            console.log('Orders fetched from Supabase:', ordersData?.length || 0);
-            const transformedOrders: Order[] = (ordersData || []).map(order => ({
-              ...order,
-              items: Array.isArray(order.items) ? order.items as { id: string; quantity: number; }[] : []
-            }));
-            setOrders(transformedOrders);
-          }
-        } catch (orderError) {
-          console.error('Error fetching orders:', orderError);
+        if (error) {
+          console.error('Error fetching orders from Supabase:', error);
           setOrders([]);
+        } else {
+          console.log('Orders fetched from Supabase:', ordersData?.length || 0);
+          const transformedOrders: Order[] = (ordersData || []).map(order => ({
+            ...order,
+            items: Array.isArray(order.items) ? order.items as { id: string; quantity: number; }[] : []
+          }));
+          setOrders(transformedOrders);
         }
+      } catch (orderError) {
+        console.error('Error fetching orders:', orderError);
+        setOrders([]);
+      }
 
-      } catch (error) {
-        console.error('Error fetching admin data:', error);
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+      toast({
+        title: 'Error loading data',
+        description: 'Failed to fetch admin data. Check console for details.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      console.log('Refreshing users from Supabase...');
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
         toast({
-          title: 'Error loading data',
-          description: 'Failed to fetch admin data. Check console for details.',
+          title: 'Error',
+          description: 'Failed to refresh users',
           variant: 'destructive'
         });
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
+      const usersData: User[] = (profilesData || []).map(profile => ({
+        uid: profile.id,
+        email: profile.email,
+        name: profile.name || 'No name',
+        selectedBlock: profile.selected_block || undefined,
+        createdAt: profile.created_at
+      }));
+      
+      setUsers(usersData);
+      toast({
+        title: 'Users Refreshed',
+        description: `Successfully loaded ${usersData.length} users`,
+      });
+    } catch (error) {
+      console.error('Error refreshing users:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh users',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  useEffect(() => {
     if (isAdmin) {
       fetchData();
     } else {
@@ -676,6 +719,9 @@ const Admin = () => {
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + order.total_amount, 0);
   const totalUnreadMessages = userChats.reduce((sum, chat) => sum + chat.unreadCount, 0);
+  const totalCartItems = cartItems.length;
+  const paidOrders = orders.filter(o => o.payment_status === 'paid').length;
+  const pendingOrders = orders.filter(o => o.payment_status === 'pending').length;
 
   const selectedChatData = selectedChat ? userChats.find(chat => chat.userId === selectedChat) : null;
 
@@ -695,8 +741,8 @@ const Admin = () => {
 
           <Card>
             <CardContent className="p-6">
-              <div className="admin-stat-label">Unread Messages</div>
-              <div className="admin-stat-value">{totalUnreadMessages}</div>
+              <div className="admin-stat-label">Active Carts</div>
+              <div className="admin-stat-value">{totalCartItems}</div>
             </CardContent>
           </Card>
 
@@ -704,6 +750,9 @@ const Admin = () => {
             <CardContent className="p-6">
               <div className="admin-stat-label">Total Orders</div>
               <div className="admin-stat-value">{totalOrders}</div>
+              <div className="text-xs text-breakfast-500 mt-1">
+                {paidOrders} paid • {pendingOrders} pending
+              </div>
             </CardContent>
           </Card>
 
@@ -744,53 +793,64 @@ const Admin = () => {
         </Card>
 
         {/* Orders Management */}
-        {orders.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-breakfast-800">Orders Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+        <Card className="mb-8 border-gray-200">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-xl font-semibold text-gray-900">Orders Management</CardTitle>
+              <div className="text-sm text-gray-600">
+                {orders.length} order{orders.length !== 1 ? 's' : ''} total
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {orders.length === 0 ? (
+              <div className="text-center py-12 text-gray-600">
+                No orders found
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-gray-100">
+                <table className="w-full min-w-[1000px]">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 text-breakfast-800">User</th>
-                      <th className="text-left py-2 text-breakfast-800">Items</th>
-                      <th className="text-left py-2 text-breakfast-800">Amount</th>
-                      <th className="text-left py-2 text-breakfast-800">Type</th>
-                      <th className="text-left py-2 text-breakfast-800">Status</th>
-                      <th className="text-left py-2 text-breakfast-800">Date</th>
-                      <th className="text-left py-2 text-breakfast-800">Actions</th>
+                    <tr className="bg-gray-50">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">User ID</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Order Items</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Amount</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Type</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Date</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map((order) => (
-                      <tr key={order.id} className="border-b">
-                        <td className="py-3 px-4">
+                      <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="py-3 px-4 whitespace-nowrap">
                           <div>
-                            <div className="font-semibold">User ID: {order.user_id}</div>
-                            <div className="text-xs text-breakfast-600">Order #{order.id.slice(-6)}</div>
+                            <div className="font-medium text-gray-800 text-sm truncate max-w-[120px]" title={`User: ${order.user_id}`}>
+                              {order.user_id.substring(0, 8)}...
+                            </div>
+                            <div className="text-xs text-gray-600">Order #{order.id.slice(-6)}</div>
                           </div>
                         </td>
-                        <td className="text-breakfast-700">
-                          <div className="flex flex-col items-start"> {/* Changed here */}
+                        <td className="py-3 px-4">
+                          <div className="flex flex-col space-y-1 max-w-[200px]">
                             {order.items && order.items.length > 0 ? (
                               order.items.map((item, idx) => (
-                                <div key={idx} className="text-xs">
-                                  {item.quantity}x Item ID: {item.id}
+                                <div key={idx} className="text-xs bg-gray-100 px-2 py-1 rounded whitespace-nowrap truncate">
+                                  <span className="font-medium">{item.quantity}x</span> Item: {item.id.substring(0, 12)}...
                                 </div>
                               ))
                             ) : (
-                              <div className="text-xs text-gray-500">No items</div>
+                              <div className="text-xs text-gray-500 italic">No items</div>
                             )}
                           </div>
                         </td>
-                        <td className="text-breakfast-800 font-semibold">
-                          {order.currency?.toUpperCase() || 'UGX'} {((order.total_amount || 0) / 100).toLocaleString()}
+                        <td className="py-3 px-4 font-semibold text-gray-800 whitespace-nowrap">
+                          {order.currency?.toUpperCase() || 'UGX'} {((order.total_amount || 0) ).toLocaleString()}
                         </td>
-                        <td className="text-breakfast-700 text-xs">Payment</td>
-                        <td>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        <td className="py-3 px-4 text-gray-700 text-sm whitespace-nowrap">Payment</td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                               order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
                                 order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
                                   'bg-gray-100 text-gray-800'
@@ -798,17 +858,20 @@ const Admin = () => {
                             {order.payment_status}
                           </span>
                         </td>
-                        <td className="text-breakfast-600 text-xs">
+                        <td className="py-3 px-4 text-gray-600 text-sm whitespace-nowrap">
                           {new Date(order.created_at).toLocaleDateString()}
+                          <div className="text-xs text-gray-500">
+                            {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </td>
-                        <td>
-                          <div className="flex gap-1">
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex gap-2">
                             {order.payment_status === 'pending' && (
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => updateOrderStatus(order.id, 'paid')}
-                                className="text-xs"
+                                className="text-xs h-8 whitespace-nowrap"
                               >
                                 Mark Paid
                               </Button>
@@ -818,7 +881,7 @@ const Admin = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => updateOrderStatus(order.id, 'pending')}
-                                className="text-xs"
+                                className="text-xs h-8 whitespace-nowrap"
                               >
                                 Reset
                               </Button>
@@ -829,51 +892,98 @@ const Admin = () => {
                     ))}
                   </tbody>
                 </table>
-                {orders.length === 0 && (
-                  <div className="text-center py-8 text-breakfast-600">
-                    No orders found
-                  </div>
-                )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
         {/* User Management */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-breakfast-800">User Management</CardTitle>
+        <Card className="mb-8 border-gray-200">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-xl font-semibold text-gray-900">User Management</CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  {users.length} user{users.length !== 1 ? 's' : ''}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchUsers}
+                  disabled={loading}
+                >
+                  Refresh
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 text-breakfast-800">Name</th>
-                    <th className="text-left py-2 text-breakfast-800">Email</th>
-                    <th className="text-left py-2 text-breakfast-800">Block</th>
-                    <th className="text-left py-2 text-breakfast-800">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.uid} className="border-b">
-                      <td className="py-3 text-breakfast-800">{user.name || 'No name'}</td>
-                      <td className="text-breakfast-600">{user.email}</td>
-                      <td className="text-breakfast-600">{user.selectedBlock || 'Not set'}</td>
-                      <td className="text-breakfast-600 text-sm">
-                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
-                      </td>
+            {users.length === 0 ? (
+              <div className="text-center py-12 text-gray-600">
+                No users found in the profiles table
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-gray-100">
+                <table className="w-full min-w-[900px]">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">User ID</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Name</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Email</th>
+                     
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Location</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Created</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {users.length === 0 && (
-                <div className="text-center py-8 text-breakfast-600">
-                  No users found
-                </div>
-              )}
-            </div>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.uid} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="font-mono text-xs text-gray-600 truncate max-w-[120px]" title={user.uid}>
+                            {user.uid.substring(0, 10)}...
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="font-medium text-gray-800 truncate max-w-[150px]" title={user.name}>
+                            {user.name}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="text-gray-600 truncate max-w-[180px]" title={user.email}>
+                            {user.email}
+                          </div>
+                        </td>
+                        
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          {user.selectedBlock ? (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                              {user.selectedBlock}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Not set</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 text-sm whitespace-nowrap">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                          <div className="text-xs text-gray-500">
+                            {new Date(user.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <Badge
+                            variant="outline"
+                            className="border-green-200 text-green-700 bg-green-50"
+                          >
+                            Active
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -881,6 +991,7 @@ const Admin = () => {
         <div className="mb-8">
           <MenuManager />
         </div>
+
 
         {/* User Communications */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

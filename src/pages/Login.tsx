@@ -43,7 +43,7 @@ const Login = () => {
     try {
       setLoading(true);
       await login(email, password);
-      navigate('/dashboard');
+      navigate('/');
       toast({ title: 'Welcome back!' });
     } catch (error) {
       console.error('Login error:', error);
