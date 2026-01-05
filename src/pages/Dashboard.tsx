@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { LocationPicker, LocationData } from '@/components/LocationPicker';
 import '../styles/Dashboard.css';
 
 interface Order {
@@ -49,6 +50,8 @@ const blocks = [
 
 const Dashboard = () => {
   const { userData, updateUserBlock, currentUser } = useAuth();
+   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [selectedBlock, setSelectedBlock] = useState(userData?.selectedBlock || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
@@ -282,33 +285,26 @@ const Dashboard = () => {
     }
   };
 
-  const handleBlockUpdate = async () => {
-    if (!selectedBlock) {
-      toast({
-        title: 'Please select a location',
-        description: 'Choose your campus block first.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  const handleLocationSelect = async (location: LocationData) => {
+    setIsUpdatingLocation(true);
     try {
-      setIsUpdating(true);
-      console.log('Updating user block to:', selectedBlock);
-      await updateUserBlock(selectedBlock);
+      // Store location as JSON string
+      const locationString = JSON.stringify(location);
+      await updateUserBlock(locationString);
+      setCurrentLocation(location);
       toast({
-        title: 'Location updated successfully!',
-        description: 'Your campus location has been saved.',
+        title: 'Location Updated',
+        description: 'Your delivery location has been saved.',
       });
     } catch (error) {
-      console.error('Error updating block:', error);
+      console.error('Error updating location:', error);
       toast({
-        title: 'Error updating location',
-        description: 'Please try again later.',
-        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Failed to update your location. Please try again.',
+        variant: 'destructive'
       });
     } finally {
-      setIsUpdating(false);
+      setIsUpdatingLocation(false);
     }
   };
 
@@ -355,52 +351,41 @@ const Dashboard = () => {
         <div className="dashboard-grid">
           {/* Location Selection */}
           <Card className="dashboard-card-elevated lg:col-span-1">
-            <CardHeader className="dashboard-card-header">
-              <CardTitle className="dashboard-card-title dashboard-card-title-lg">
-                <span>📍</span>
-                <span>Your Location</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="dashboard-card-content dashboard-space-y-6">
-              <div>
-                <label className="dashboard-label">
-                  Select your campus block:
-                </label>
-                <Select value={selectedBlock} onValueChange={setSelectedBlock}>
-                  <SelectTrigger className="custom-select h-12 text-base">
-                    <SelectValue placeholder="Choose your block" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border shadow-lg">
-                    {blocks.map((block) => (
-                      <SelectItem
-                        key={block.id}
-                        value={block.id}
-                        className="select-item hover:bg-accent/10 cursor-pointer"
-                      >
-                        {block.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                onClick={handleBlockUpdate}
-                disabled={isUpdating || !selectedBlock}
-                className="dashboard-btn-primary"
-              >
-                {isUpdating ? 'Updating...' : 'Update Location'}
-              </Button>
-
-              {userData?.selectedBlock && (
-                <div className="dashboard-location-info">
-                  <p>
-                    <strong>Current location:</strong> {selectedBlockName}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    <CardHeader className="dashboard-card-header">
+                      <CardTitle className="dashboard-card-title dashboard-card-title-lg">
+                        <span>📍</span>
+                        <span>Delivery Location</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="dashboard-card-content">
+                      <p className="text-muted-foreground mb-4">
+                        Select your delivery location on the map. You can search for an address, 
+                        use your current location, or click directly on the map.
+                      </p>
+                      
+                      {isUpdatingLocation && (
+                        <div className="text-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                          <p className="mt-2 text-sm text-muted-foreground">Updating location...</p>
+                        </div>
+                      )}
+          
+                      <LocationPicker
+                        initialLocation={currentLocation || undefined}
+                        onLocationSelect={handleLocationSelect}
+                      />
+          
+                      {currentLocation && (
+                        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-sm text-green-800">
+                            <strong>✓ Location saved:</strong> {currentLocation.address.length > 80 
+                              ? currentLocation.address.substring(0, 80) + '...' 
+                              : currentLocation.address}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
           {/* Quick Stats */}
           <Card className="dashboard-card-elevated">

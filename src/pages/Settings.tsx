@@ -123,7 +123,7 @@ const Settings = () => {
         </Card>
 
         {/* Location Settings with Map */}
-        <Card className="dashboard-card-elevated lg:col-span-2">
+        <Card className="dashboard-card-elevated lg:col-span-1">
           <CardHeader className="dashboard-card-header">
             <CardTitle className="dashboard-card-title dashboard-card-title-lg">
               <span>📍</span>

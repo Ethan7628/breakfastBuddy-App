@@ -82,7 +82,7 @@ const Admin = () => {
       try {
         console.log('Fetching admin data...');
         setLoading(true);
-        
+
         // Fetch users from Supabase
         try {
           console.log('Fetching users from Supabase...');
@@ -205,10 +205,10 @@ const Admin = () => {
         if (error) throw error;
 
         console.log('Admin received chat messages:', messages?.length || 0);
-        
+
         // Group messages by user
         const chatsByUser: { [userId: string]: UserChat } = {};
-        
+
         (messages || []).forEach(msg => {
           if (!chatsByUser[msg.user_id]) {
             chatsByUser[msg.user_id] = {
@@ -220,7 +220,7 @@ const Admin = () => {
               lastMessageTime: msg.created_at
             };
           }
-          
+
           const chatMessage: ChatMessage = {
             id: msg.id,
             userId: msg.user_id,
@@ -231,13 +231,13 @@ const Admin = () => {
             createdAt: msg.created_at,
             isRead: msg.is_read
           };
-          
+
           chatsByUser[msg.user_id].messages.push(chatMessage);
-          
+
           if (msg.created_at > chatsByUser[msg.user_id].lastMessageTime) {
             chatsByUser[msg.user_id].lastMessageTime = msg.created_at;
           }
-          
+
           if (!msg.is_from_admin && !msg.is_read) {
             chatsByUser[msg.user_id].unreadCount++;
           }
@@ -273,10 +273,10 @@ const Admin = () => {
         },
         (payload) => {
           console.log('Real-time admin chat update:', payload);
-          
+
           setUserChats(prevChats => {
             const chatsByUser: { [userId: string]: UserChat } = {};
-            
+
             // Rebuild chats from existing state
             prevChats.forEach(chat => {
               chatsByUser[chat.userId] = { ...chat };
@@ -285,7 +285,7 @@ const Admin = () => {
             if (payload.eventType === 'INSERT') {
               const newMsg = payload.new;
               const userId = newMsg.user_id;
-              
+
               if (!chatsByUser[userId]) {
                 chatsByUser[userId] = {
                   userId,
@@ -296,7 +296,7 @@ const Admin = () => {
                   lastMessageTime: newMsg.created_at
                 };
               }
-              
+
               const chatMessage: ChatMessage = {
                 id: newMsg.id,
                 userId: newMsg.user_id,
@@ -307,13 +307,13 @@ const Admin = () => {
                 createdAt: newMsg.created_at,
                 isRead: newMsg.is_read
               };
-              
+
               chatsByUser[userId].messages.push(chatMessage);
               chatsByUser[userId].lastMessageTime = newMsg.created_at;
-              
+
               if (!newMsg.is_from_admin && !newMsg.is_read) {
                 chatsByUser[userId].unreadCount++;
-                
+
                 playNotificationSound();
                 toast({
                   title: 'New message from User',
@@ -323,18 +323,18 @@ const Admin = () => {
             } else if (payload.eventType === 'UPDATE') {
               const updatedMsg = payload.new;
               const userId = updatedMsg.user_id;
-              
+
               if (chatsByUser[userId]) {
                 chatsByUser[userId].messages = chatsByUser[userId].messages.map(msg =>
                   msg.id === updatedMsg.id
                     ? {
-                        ...msg,
-                        isRead: updatedMsg.is_read,
-                        message: updatedMsg.message
-                      }
+                      ...msg,
+                      isRead: updatedMsg.is_read,
+                      message: updatedMsg.message
+                    }
                     : msg
                 );
-                
+
                 // Recalculate unread count
                 chatsByUser[userId].unreadCount = chatsByUser[userId].messages.filter(
                   msg => !msg.isFromAdmin && !msg.isRead
@@ -343,12 +343,12 @@ const Admin = () => {
             } else if (payload.eventType === 'DELETE') {
               const deletedMsg = payload.old;
               const userId = deletedMsg.user_id;
-              
+
               if (chatsByUser[userId]) {
                 chatsByUser[userId].messages = chatsByUser[userId].messages.filter(
                   msg => msg.id !== deletedMsg.id
                 );
-                
+
                 if (chatsByUser[userId].messages.length === 0) {
                   delete chatsByUser[userId];
                 }
@@ -377,20 +377,20 @@ const Admin = () => {
           const selectedChatData = userChats.find(chat => chat.userId === selectedChat);
           if (!selectedChatData) return;
 
-          const unreadMessages = selectedChatData.messages.filter(msg => 
+          const unreadMessages = selectedChatData.messages.filter(msg =>
             !msg.isFromAdmin && !msg.isRead
           );
 
           if (unreadMessages.length > 0) {
             const messageIds = unreadMessages.map(msg => msg.id);
-            
+
             const { error } = await supabase
               .from('chat_messages')
               .update({ is_read: true })
               .in('id', messageIds);
 
             if (error) throw error;
-            
+
             console.log(`Auto-marked ${unreadMessages.length} messages as read for user ${selectedChat}`);
           }
         } catch (error) {
@@ -414,7 +414,7 @@ const Admin = () => {
     }
 
     setIsSendingReply(true);
-    
+
     try {
       const { error } = await supabase
         .from('chat_messages')
@@ -433,7 +433,7 @@ const Admin = () => {
         title: 'Reply Sent',
         description: `Your message has been sent to ${userName}.`,
       });
-      
+
       setReplyMessage('');
     } catch (error) {
       console.error('Error sending admin reply:', error);
@@ -450,7 +450,7 @@ const Admin = () => {
   const markUserMessagesAsRead = async (userId: string) => {
     try {
       console.log('Marking messages as read for user:', userId);
-      
+
       const { data: unreadMessages, error: fetchError } = await supabase
         .from('chat_messages')
         .select('id')
@@ -459,7 +459,7 @@ const Admin = () => {
         .eq('is_read', false);
 
       if (fetchError) throw fetchError;
-      
+
       if (!unreadMessages || unreadMessages.length === 0) {
         toast({
           title: 'No Unread Messages',
@@ -469,7 +469,7 @@ const Admin = () => {
       }
 
       const messageIds = unreadMessages.map(msg => msg.id);
-      
+
       const { error: updateError } = await supabase
         .from('chat_messages')
         .update({ is_read: true })
@@ -501,7 +501,7 @@ const Admin = () => {
     const confirmed = window.confirm(
       "⚠️ WARNING: This will clear the displayed admin data and attempt to reset user data where permissions allow. Are you sure you want to continue?"
     );
-    
+
     if (!confirmed) return;
 
     try {
@@ -516,13 +516,13 @@ const Admin = () => {
         const { data: cartData, error: fetchError } = await supabase
           .from('cart_items')
           .select('id');
-        
+
         if (!fetchError && cartData) {
           const { error: deleteError } = await supabase
             .from('cart_items')
             .delete()
             .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all cart items
-          
+
           if (deleteError) {
             console.warn('Error clearing Supabase cart items:', deleteError);
           } else {
@@ -541,7 +541,7 @@ const Admin = () => {
           .from('orders')
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all orders
-        
+
         if (error) {
           console.warn('Error clearing Supabase orders:', error);
         } else {
@@ -559,7 +559,7 @@ const Admin = () => {
           .from('chat_messages')
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all messages
-        
+
         if (error) {
           console.warn('Error clearing Supabase chat messages:', error);
         } else {
@@ -577,7 +577,7 @@ const Admin = () => {
 
       // Show success message with actual counts
       const totalDeleted = deletedCarts + deletedOrders + deletedChats;
-      
+
       if (totalDeleted > 0) {
         toast({
           title: 'Reset Complete!',
@@ -593,12 +593,12 @@ const Admin = () => {
 
     } catch (error) {
       console.error('Error during reset operation:', error);
-      
+
       // Still clear the display even if Firebase operations failed
       setCartItems([]);
       setOrders([]);
       setUserChats([]);
-      
+
       toast({
         title: 'Admin View Cleared',
         description: 'Display cleared successfully. Some Firebase data may require manual deletion due to permission restrictions.',
@@ -692,28 +692,28 @@ const Admin = () => {
               <div className="admin-stat-value">{totalUsers}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="admin-stat-label">Unread Messages</div>
               <div className="admin-stat-value">{totalUnreadMessages}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="admin-stat-label">Total Orders</div>
               <div className="admin-stat-value">{totalOrders}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="admin-stat-label">Revenue</div>
               <div className="admin-stat-value">UGX {totalRevenue.toLocaleString()}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="admin-stat-label">Unread Messages</div>
@@ -732,7 +732,7 @@ const Admin = () => {
               <p className="text-breakfast-600">
                 Clear all user data including carts, orders, and chat messages. This action cannot be undone.
               </p>
-              <Button 
+              <Button
                 onClick={resetAllUserData}
                 variant="destructive"
                 disabled={loading}
@@ -773,7 +773,7 @@ const Admin = () => {
                           </div>
                         </td>
                         <td className="text-breakfast-700">
-                          <div className="max-w-xs">
+                          <div className="flex flex-col items-start"> {/* Changed here */}
                             {order.items && order.items.length > 0 ? (
                               order.items.map((item, idx) => (
                                 <div key={idx} className="text-xs">
@@ -790,12 +790,11 @@ const Admin = () => {
                         </td>
                         <td className="text-breakfast-700 text-xs">Payment</td>
                         <td>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                            order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                                order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                            }`}>
                             {order.payment_status}
                           </span>
                         </td>
@@ -911,11 +910,10 @@ const Admin = () => {
                   {userChats.map((chat) => (
                     <div
                       key={chat.userId}
-                      className={`p-3 border rounded cursor-pointer transition-colors ${
-                        selectedChat === chat.userId
+                      className={`p-3 border rounded cursor-pointer transition-colors ${selectedChat === chat.userId
                           ? 'bg-breakfast-50 border-breakfast-300'
                           : 'border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                       onClick={() => setSelectedChat(chat.userId)}
                     >
                       <div className="flex justify-between items-start">
@@ -957,11 +955,10 @@ const Admin = () => {
                     {selectedChatData.messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`p-2 rounded max-w-[80%] ${
-                          message.isFromAdmin
+                        className={`p-2 rounded max-w-[80%] ${message.isFromAdmin
                             ? 'bg-breakfast-200 text-breakfast-800 ml-auto'
                             : 'bg-white text-breakfast-700 mr-auto'
-                        }`}
+                          }`}
                       >
                         <div className="text-sm">{message.message}</div>
                         <div className="text-xs text-breakfast-600 mt-1">
@@ -970,7 +967,7 @@ const Admin = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Textarea
                       value={replyMessage}
@@ -981,8 +978,8 @@ const Admin = () => {
                     <div className="flex gap-2">
                       <Button
                         onClick={() => sendReplyToUser(
-                          selectedChatData.userId, 
-                          selectedChatData.userName, 
+                          selectedChatData.userId,
+                          selectedChatData.userName,
                           selectedChatData.userEmail
                         )}
                         disabled={isSendingReply || !replyMessage.trim()}
