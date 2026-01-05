@@ -90,8 +90,10 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          ingredients: string | null
           name: string
           popular: boolean | null
+          preparation_time: string | null
           price: number
           updated_at: string | null
         }
@@ -101,8 +103,10 @@ export type Database = {
           description?: string | null
           id: string
           image_url?: string | null
+          ingredients?: string | null
           name: string
           popular?: boolean | null
+          preparation_time?: string | null
           price: number
           updated_at?: string | null
         }
@@ -112,8 +116,10 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          ingredients?: string | null
           name?: string
           popular?: boolean | null
+          preparation_time?: string | null
           price?: number
           updated_at?: string | null
         }
@@ -123,11 +129,12 @@ export type Database = {
         Row: {
           created_at: string | null
           currency: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
           id: string
           items: Json
-          old_firebase_user_id: string
           payment_status: string | null
-          stripe_payment_intent_id: string | null
           total_amount: number
           updated_at: string | null
           user_id: string | null
@@ -135,11 +142,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
           items: Json
-          old_firebase_user_id: string
           payment_status?: string | null
-          stripe_payment_intent_id?: string | null
           total_amount: number
           updated_at?: string | null
           user_id?: string | null
@@ -147,11 +155,12 @@ export type Database = {
         Update: {
           created_at?: string | null
           currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
           items?: Json
-          old_firebase_user_id?: string
           payment_status?: string | null
-          stripe_payment_intent_id?: string | null
           total_amount?: number
           updated_at?: string | null
           user_id?: string | null
