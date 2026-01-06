@@ -357,16 +357,16 @@ export const MenuManager = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className='border-none shadow-none'>
+        <CardHeader className="flex flex-row items-center justify-between px-0">
           <CardTitle className="text-amber-800">Menu Management</CardTitle>
           <Button onClick={openAddDialog} className="breakfast-gradient text-white">
             <Plus className="h-4 w-4 mr-2" />
             Add New Meal
           </Button>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-amber-600 mb-4">
+        <CardContent className='p-0'>
+          <p className="text-sm text-amber-600 mb-4 justify-self-start">
             Manage your menu items. Add new meals with images, prices, and descriptions.
           </p>
           

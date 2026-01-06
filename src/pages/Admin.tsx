@@ -730,56 +730,56 @@ const Admin = () => {
     <div className="admin-root">
       <div className="admin-center">
         <h1 className="admin-title">Admin Dashboard</h1>
-        <p className="admin-desc">Manage users and monitor app activity</p>
+        <p className="admin-desc mb-4">Manage users and monitor app activity</p>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="admin-stat-label">Total Users</div>
-              <div className="admin-stat-value">{totalUsers}</div>
+          <Card className='border-amber-200'>
+            <CardContent className="p-6 ">
+              <div className="admin-stat-label text-amber-700">Total Users</div>
+              <div className="admin-stat-value text-amber-600">{totalUsers}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className='border-amber-200'>
             <CardContent className="p-6">
-              <div className="admin-stat-label">Active Carts</div>
-              <div className="admin-stat-value">{totalCartItems}</div>
+              <div className="admin-stat-label text-amber-700">Active Carts</div>
+              <div className="admin-stat-value text-amber-600">{totalCartItems}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className='border-amber-200'>
             <CardContent className="p-6">
-              <div className="admin-stat-label">Total Orders</div>
-              <div className="admin-stat-value">{totalOrders}</div>
-              <div className="text-xs text-breakfast-500 mt-1">
+              <div className="admin-stat-label text-amber-700">Total Orders</div>
+              <div className="admin-stat-value text-amber-600">{totalOrders}</div>
+              <div className="text-xs text-amber-500 mt-1">
                 {paidOrders} paid • {pendingOrders} pending
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className='border-amber-200'>
             <CardContent className="p-6">
-              <div className="admin-stat-label">Revenue</div>
-              <div className="admin-stat-value">UGX {totalRevenue.toLocaleString()}</div>
+              <div className="admin-stat-label text-amber-700">Revenue</div>
+              <div className="admin-stat-value text-amber-600">UGX {totalRevenue.toLocaleString()}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card  className='border-amber-200'>
             <CardContent className="p-6">
-              <div className="admin-stat-label">Unread Messages</div>
-              <div className="admin-stat-value">{totalUnreadMessages}</div>
+              <div className="admin-stat-label text-amber-700">Unread Messages</div>
+              <div className="admin-stat-value text-amber-600">{totalUnreadMessages}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Data Management Section */}
-        <Card className="mb-8">
+        <Card className="mb-8 border-amber-200">
           <CardHeader>
-            <CardTitle className="text-breakfast-800">Data Management</CardTitle>
+            <CardTitle className="text-amber-800">Data Management</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <p className="text-breakfast-600">
+              <p className="text-amber-600">
                 Clear all user data including carts, orders, and chat messages. This action cannot be undone.
               </p>
               <Button
@@ -794,32 +794,32 @@ const Admin = () => {
         </Card>
 
         {/* Orders Management */}
-        <Card className="mb-8 border-gray-200">
-          <CardHeader className="pb-3">
+        <Card className="mb-8 border-none shadow-none">
+          <CardHeader className="pb-3 px-0">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-xl font-semibold text-gray-900">Orders Management</CardTitle>
-              <div className="text-sm text-gray-600">
+              <CardTitle className="text-xl font-semibold text-amber-800">Orders Management</CardTitle>
+              <div className="text-sm text-amber-600">
                 {orders.length} order{orders.length !== 1 ? 's' : ''} total
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {orders.length === 0 ? (
-              <div className="text-center py-12 text-gray-600">
+              <div className="text-center py-12 text-amber-600">
                 No orders found
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-gray-100">
+              <div className="overflow-x-auto rounded-lg">
                 <table className="w-full min-w-[1000px]">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">User ID</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Order Items</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Amount</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Type</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Status</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Date</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-700 whitespace-nowrap">User ID</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-700 whitespace-nowrap">Order Items</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-700 whitespace-nowrap">Amount</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-700 whitespace-nowrap">Type</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-700 whitespace-nowrap">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-700 whitespace-nowrap">Date</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-700 whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -830,7 +830,7 @@ const Admin = () => {
                             <div className="font-medium text-gray-800 text-sm truncate max-w-[120px]" title={`User: ${order.user_id || 'Unknown'}`}>
                               {order.user_id?.substring(0, 8) || 'Unknown'}...
                             </div>
-                            <div className="text-xs text-gray-600">Order #{order.id.slice(-6)}</div>
+                            <div className="text-xs text-amber-600">Order #{order.id.slice(-6)}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4">
@@ -842,26 +842,26 @@ const Admin = () => {
                                 </div>
                               ))
                             ) : (
-                              <div className="text-xs text-gray-500 italic">No items</div>
+                              <div className="text-xs text-amber-500 italic">No items</div>
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-semibold text-gray-800 whitespace-nowrap">
+                        <td className="py-3 px-4 font-semibold text-amber-800 whitespace-nowrap">
                           {order.currency?.toUpperCase() || 'UGX'} {((order.total_amount || 0) ).toLocaleString()}
                         </td>
-                        <td className="py-3 px-4 text-gray-700 text-sm whitespace-nowrap">Payment</td>
+                        <td className="py-3 px-4 text-amber-700 text-sm whitespace-nowrap">Payment</td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                               order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
                                 order.payment_status === 'failed' ? 'bg-red-100 text-red-800' :
-                                  'bg-gray-100 text-gray-800'
+                                  'bg-gray-100 text-amber-800'
                             }`}>
                             {order.payment_status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm whitespace-nowrap">
+                        <td className="py-3 px-4 text-amber-600 text-sm whitespace-nowrap">
                           {new Date(order.created_at).toLocaleDateString()}
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-amber-500">
                             {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </td>
@@ -899,12 +899,12 @@ const Admin = () => {
         </Card>
 
         {/* User Management */}
-        <Card className="mb-8 border-gray-200">
-          <CardHeader className="pb-3">
+        <Card className="mb-8 border-none shadow-none">
+          <CardHeader className="pb-3 px-0">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-xl font-semibold text-gray-900">User Management</CardTitle>
+              <CardTitle className="text-xl font-semibold text-amber-800">User Management</CardTitle>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-amber-600">
                   {users.length} user{users.length !== 1 ? 's' : ''}
                 </span>
                 <Button
@@ -918,56 +918,56 @@ const Admin = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {users.length === 0 ? (
-              <div className="text-center py-12 text-gray-600">
+              <div className="text-center py-12 text-amber-600">
                 No users found in the profiles table
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-gray-100">
+              <div className="overflow-x-auto rounded-lg  w-full">
                 <table className="w-full min-w-[900px]">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">User ID</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Name</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Email</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-800 whitespace-nowrap">User ID</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-800 whitespace-nowrap">Name</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-800 whitespace-nowrap">Email</th>
                      
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Location</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Created</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-800 whitespace-nowrap">Location</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-800 whitespace-nowrap">Created</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-amber-800 whitespace-nowrap">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map((user) => (
                       <tr key={user.uid} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="font-mono text-xs text-gray-600 truncate max-w-[120px]" title={user.uid || 'Unknown'}>
+                          <div className="font-mono text-xs text-amber-600 truncate max-w-[120px]" title={user.uid || 'Unknown'}>
                             {user.uid?.substring(0, 10) || 'Unknown'}...
                           </div>
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-800 truncate max-w-[150px]" title={user.name}>
+                          <div className="font-medium text-amber-800 truncate max-w-[150px]" title={user.name}>
                             {user.name}
                           </div>
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="text-gray-600 truncate max-w-[180px]" title={user.email}>
+                          <div className="text-amber-600 truncate max-w-[180px]" title={user.email}>
                             {user.email}
                           </div>
                         </td>
                         
-                        <td className="py-3 px-4 whitespace-nowrap">
+                        <td className="py-3 px-4 whitespace-nowrap justify-start">
                           {user.selectedBlock ? (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                            <span className="text-amber-800 font-medium">
                               {user.selectedBlock}
-                            </Badge>
+                            </span>
                           ) : (
-                            <span className="text-gray-400 text-sm">Not set</span>
+                            <span className="text-amber-400 text-sm">Not set</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-gray-600 text-sm whitespace-nowrap">
+                        <td className="py-3 px-4 text-amber-600 text-sm whitespace-nowrap">
                           {new Date(user.createdAt).toLocaleDateString()}
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-amber-500">
                             {new Date(user.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </td>
@@ -996,9 +996,9 @@ const Admin = () => {
 
         {/* User Communications */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-breakfast-800">User Messages</CardTitle>
+          <Card className="border-amber-200">
+            <CardHeader className="pb-3 px-3 justify-self-start">
+              <CardTitle className="text-amber-800">User Messages</CardTitle>
               {chatError && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-red-600 text-sm">{chatError}</span>
@@ -1008,7 +1008,7 @@ const Admin = () => {
                 </div>
               )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {chatLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map(i => (
@@ -1016,23 +1016,23 @@ const Admin = () => {
                   ))}
                 </div>
               ) : userChats.length === 0 ? (
-                <p className="text-breakfast-600">No messages yet</p>
+                <p className="text-amber-600">No messages yet</p>
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {userChats.map((chat) => (
                     <div
                       key={chat.userId}
                       className={`p-3 border rounded cursor-pointer transition-colors ${selectedChat === chat.userId
-                          ? 'bg-breakfast-50 border-breakfast-300'
-                          : 'border-gray-200 hover:bg-gray-50'
+                          ? 'bg-gray-100 border-none'
+                          : 'border-none hover:bg-gray-50'
                         }`}
                       onClick={() => setSelectedChat(chat.userId)}
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <div className="font-semibold text-breakfast-800">{chat.userName}</div>
-                          <div className="text-xs text-breakfast-600">{chat.userEmail}</div>
-                          <div className="text-sm text-breakfast-700 mt-1">
+                          <div className="font-semibold text-amber-800  justify-self-start">{chat.userName}</div>
+                          <div className="text-xs text-amber-800  justify-self-start">{chat.userEmail}</div>
+                          <div className="text-sm text-amber-800  justify-self-start mt-1">
                             {chat.messages[chat.messages.length - 1]?.message?.substring(0, 50) || 'No message'}...
                           </div>
                         </div>
@@ -1042,7 +1042,7 @@ const Admin = () => {
                               {chat.unreadCount}
                             </span>
                           )}
-                          <div className="text-xs text-breakfast-600 mt-1">
+                          <div className="text-xs text-amber-600 mt-1">
                             {new Date(chat.lastMessageTime).toLocaleDateString()}
                           </div>
                         </div>
@@ -1054,9 +1054,9 @@ const Admin = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-breakfast-800">
+          <Card className="border-amber-200">
+            <CardHeader className="pb-3 px-3">
+              <CardTitle className="text-amber-800">
                 {selectedChatData ? `Chat with ${selectedChatData.userName}` : 'Select a conversation'}
               </CardTitle>
             </CardHeader>
@@ -1068,12 +1068,12 @@ const Admin = () => {
                       <div
                         key={message.id}
                         className={`p-2 rounded max-w-[80%] ${message.isFromAdmin
-                            ? 'bg-breakfast-200 text-breakfast-800 ml-auto'
-                            : 'bg-white text-breakfast-700 mr-auto'
+                            ? 'bg-breakfast-200 text-amber-800 ml-auto'
+                            : 'bg-white text-amber-800 mr-auto'
                           }`}
                       >
                         <div className="text-sm">{message.message}</div>
-                        <div className="text-xs text-breakfast-600 mt-1">
+                        <div className="text-xs text-amber-600 mt-1">
                           {new Date(message.createdAt).toLocaleTimeString()}
                         </div>
                       </div>
@@ -1110,7 +1110,7 @@ const Admin = () => {
                   </div>
                 </div>
               ) : (
-                <p className="text-breakfast-600">Select a conversation to view and reply to messages</p>
+                <p className="text-amber-600">Select a conversation to view and reply to messages</p>
               )}
             </CardContent>
           </Card>
