@@ -134,6 +134,8 @@ export type Database = {
           customer_phone: string | null
           id: string
           items: Json
+          order_reference: string | null
+          payment_gateway_response: Json | null
           payment_status: string | null
           total_amount: number
           updated_at: string | null
@@ -147,6 +149,8 @@ export type Database = {
           customer_phone?: string | null
           id?: string
           items: Json
+          order_reference?: string | null
+          payment_gateway_response?: Json | null
           payment_status?: string | null
           total_amount: number
           updated_at?: string | null
@@ -160,6 +164,8 @@ export type Database = {
           customer_phone?: string | null
           id?: string
           items?: Json
+          order_reference?: string | null
+          payment_gateway_response?: Json | null
           payment_status?: string | null
           total_amount?: number
           updated_at?: string | null
