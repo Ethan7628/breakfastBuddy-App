@@ -414,12 +414,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("❌ Webhook processing error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: "Internal server error",
-        message: error.message 
+        message: errorMessage 
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
