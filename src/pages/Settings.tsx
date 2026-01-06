@@ -122,43 +122,7 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Location Settings with Map */}
-        <Card className="dashboard-card-elevated lg:col-span-1">
-          <CardHeader className="dashboard-card-header">
-            <CardTitle className="dashboard-card-title dashboard-card-title-lg">
-              <span>📍</span>
-              <span>Delivery Location</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="dashboard-card-content">
-            <p className="text-muted-foreground mb-4">
-              Select your delivery location on the map. You can search for an address, 
-              use your current location, or click directly on the map.
-            </p>
-            
-            {isUpdatingLocation && (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Updating location...</p>
-              </div>
-            )}
-
-            <LocationPicker
-              initialLocation={currentLocation || undefined}
-              onLocationSelect={handleLocationSelect}
-            />
-
-            {currentLocation && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800">
-                  <strong>✓ Location saved:</strong> {currentLocation.address.length > 80 
-                    ? currentLocation.address.substring(0, 80) + '...' 
-                    : currentLocation.address}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        
         
 
         {/* System Status */}
@@ -248,6 +212,44 @@ const Settings = () => {
                 <span className="settings-info-value">50+ Articles</span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Location Settings with Map */}
+        <Card className="dashboard-card-elevated lg:col-span-2">
+          <CardHeader className="dashboard-card-header">
+            <CardTitle className="dashboard-card-title dashboard-card-title-lg">
+              <span>📍</span>
+              <span>Delivery Location</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="dashboard-card-content">
+            <p className="text-muted-foreground mb-4">
+              Select your delivery location on the map. You can search for an address, 
+              use your current location, or click directly on the map.
+            </p>
+            
+            {isUpdatingLocation && (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Updating location...</p>
+              </div>
+            )}
+
+            <LocationPicker
+              initialLocation={currentLocation || undefined}
+              onLocationSelect={handleLocationSelect}
+            />
+
+            {currentLocation && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  <strong>✓ Location saved:</strong> {currentLocation.address.length > 80 
+                    ? currentLocation.address.substring(0, 80) + '...' 
+                    : currentLocation.address}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

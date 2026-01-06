@@ -223,7 +223,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
           <Button
             onClick={handleConfirmLocation}
-            className="w-full breakfast-gradient text-white"
+            className="w-50 breakfast-gradient text-white"
           >
             <MapPin className="h-4 w-4 mr-2" />
             Confirm This Location
