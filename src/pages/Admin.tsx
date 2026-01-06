@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSupabaseRole } from '@/hooks/useSupabaseRole';
 import { MenuManager } from '@/components/MenuManager';
 import '../styles/Admin.css';
+import '../styles/Menu.css';
 
 interface User {
   uid: string;
@@ -733,21 +734,21 @@ const Admin = () => {
         <p className="admin-desc mb-4">Manage users and monitor app activity</p>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <Card className='border-amber-200'>
+          <Card className='border-amber-200 menu-item-card'>
             <CardContent className="p-6 ">
               <div className="admin-stat-label text-amber-700">Total Users</div>
               <div className="admin-stat-value text-amber-600">{totalUsers}</div>
             </CardContent>
           </Card>
 
-          <Card className='border-amber-200'>
+          <Card className='border-amber-200 menu-item-card'>
             <CardContent className="p-6">
               <div className="admin-stat-label text-amber-700">Active Carts</div>
               <div className="admin-stat-value text-amber-600">{totalCartItems}</div>
             </CardContent>
           </Card>
 
-          <Card className='border-amber-200'>
+          <Card className='border-amber-200 menu-item-card'>
             <CardContent className="p-6">
               <div className="admin-stat-label text-amber-700">Total Orders</div>
               <div className="admin-stat-value text-amber-600">{totalOrders}</div>
@@ -757,14 +758,14 @@ const Admin = () => {
             </CardContent>
           </Card>
 
-          <Card className='border-amber-200'>
+          <Card className='border-amber-200 menu-item-card'>
             <CardContent className="p-6">
               <div className="admin-stat-label text-amber-700">Revenue</div>
               <div className="admin-stat-value text-amber-600">UGX {totalRevenue.toLocaleString()}</div>
             </CardContent>
           </Card>
 
-          <Card  className='border-amber-200'>
+          <Card className='border-amber-200 menu-item-card'>
             <CardContent className="p-6">
               <div className="admin-stat-label text-amber-700">Unread Messages</div>
               <div className="admin-stat-value text-amber-600">{totalUnreadMessages}</div>
