@@ -35,6 +35,7 @@ interface Order {
   user_id: string;
   items: Array<{
     id: string;
+    name?: string;
     quantity: number;
   }>;
   total_amount: number;
@@ -826,8 +827,8 @@ const Admin = () => {
                       <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div>
-                            <div className="font-medium text-gray-800 text-sm truncate max-w-[120px]" title={`User: ${order.user_id}`}>
-                              {order.user_id.substring(0, 8)}...
+                            <div className="font-medium text-gray-800 text-sm truncate max-w-[120px]" title={`User: ${order.user_id || 'Unknown'}`}>
+                              {order.user_id?.substring(0, 8) || 'Unknown'}...
                             </div>
                             <div className="text-xs text-gray-600">Order #{order.id.slice(-6)}</div>
                           </div>
@@ -837,7 +838,7 @@ const Admin = () => {
                             {order.items && order.items.length > 0 ? (
                               order.items.map((item, idx) => (
                                 <div key={idx} className="text-xs bg-gray-100 px-2 py-1 rounded whitespace-nowrap truncate">
-                                  <span className="font-medium">{item.quantity}x</span> Item: {item.id.substring(0, 12)}...
+                                  <span className="font-medium">{item.quantity || 1}x</span> {item.name || `Item: ${item.id?.substring(0, 12) || 'N/A'}`}
                                 </div>
                               ))
                             ) : (
@@ -940,8 +941,8 @@ const Admin = () => {
                     {users.map((user) => (
                       <tr key={user.uid} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="font-mono text-xs text-gray-600 truncate max-w-[120px]" title={user.uid}>
-                            {user.uid.substring(0, 10)}...
+                          <div className="font-mono text-xs text-gray-600 truncate max-w-[120px]" title={user.uid || 'Unknown'}>
+                            {user.uid?.substring(0, 10) || 'Unknown'}...
                           </div>
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
@@ -1032,7 +1033,7 @@ const Admin = () => {
                           <div className="font-semibold text-breakfast-800">{chat.userName}</div>
                           <div className="text-xs text-breakfast-600">{chat.userEmail}</div>
                           <div className="text-sm text-breakfast-700 mt-1">
-                            {chat.messages[chat.messages.length - 1]?.message.substring(0, 50)}...
+                            {chat.messages[chat.messages.length - 1]?.message?.substring(0, 50) || 'No message'}...
                           </div>
                         </div>
                         <div className="text-right">
