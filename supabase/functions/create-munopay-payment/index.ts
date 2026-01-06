@@ -100,9 +100,19 @@ Deno.serve(async (req) => {
 
     // ========== 1. CREATE ORDER IN DATABASE ==========
     console.log("Creating order...");
+    
+    // Generate the reference BEFORE creating the order so we can store it immediately
+    const orderId = crypto.randomUUID();
+    const reference = `ORDER_${orderId.substring(0, 8)}_${Date.now()}`;
+    
+    console.log("Generated order ID:", orderId);
+    console.log("Generated reference:", reference);
+    
+    // Create order with initial payment_gateway_response containing the reference
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
+        id: orderId,
         user_id: userId,
         items: items,
         total_amount: amount,
@@ -112,9 +122,20 @@ Deno.serve(async (req) => {
         customer_email: customerEmail || '',
         customer_name: customerName || '',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // CRITICAL: Store reference immediately when creating order
+        payment_gateway_response: {
+          reference: reference,
+          metadata: {
+            order_id: orderId,
+            user_id: userId,
+            items: items,
+            order_reference: reference
+          },
+          stored_at: new Date().toISOString()
+        }
       })
-      .select('id')
+      .select('id, payment_gateway_response')
       .single();
 
     if (orderError) {
@@ -122,6 +143,7 @@ Deno.serve(async (req) => {
     }
 
     console.log("Order created:", order.id);
+    console.log("Reference stored in payment_gateway_response:", order.payment_gateway_response?.reference);
 
     // ========== 2. CHECK IF MUNOPAY IS CONFIGURED ==========
     if (!munoPayApiKey || !munoPayAccountNumber) {
@@ -143,7 +165,8 @@ Deno.serve(async (req) => {
             amount: amount,
             phone: formattedPhone,
             status: "order_created",
-            note: "Configure MUNOPAY_API_KEY and MUNOPAY_ACCOUNT_NUMBER environment variables"
+            note: "Configure MUNOPAY_API_KEY and MUNOPAY_ACCOUNT_NUMBER environment variables",
+            reference: reference
           }
         }),
         { headers: corsHeaders }
@@ -153,20 +176,30 @@ Deno.serve(async (req) => {
     // ========== 3. CALL REAL MUNOPAY API ==========
     console.log("Calling MunoPay API to initiate payment...");
     
-    // Prepare MunoPay request according to their API documentation
+    // Prepare MunoPay request - USING CORRECT ENDPOINT STRUCTURE FROM DOCS
     const munoPayPayload = {
       account_number: munoPayAccountNumber,
-      reference: `ORDER-${order.id.substring(0, 8)}-${Date.now()}`,
+      reference: reference,
       phone: formattedPhone,
       amount: amount,
       currency: 'UGX',
       email: customerEmail || '',
       names: customerName || '',
-      description: `Payment for order ${order.id.substring(0, 8)}`
+      description: `Payment for order ${order.id.substring(0, 8)}`,
+      callback_url: 'https://vmvvvpqwwhybqzxewksd.supabase.co/functions/v1/munopay-webhook',
+      // Add metadata that will be returned in webhook
+      metadata: {
+        order_id: order.id,
+        user_id: userId,
+        items: items,
+        order_reference: reference
+      }
     };
 
-    console.log("MunoPay payload:", munoPayPayload);
+    console.log("MunoPay payload:", JSON.stringify(munoPayPayload, null, 2));
+    console.log("Webhook URL: https://vmvvvpqwwhybqzxewksd.supabase.co/functions/v1/munopay-webhook");
 
+    // CORRECT ENDPOINT: https://payments.munopay.com/api/v1/deposit
     const munoPayUrl = "https://payments.munopay.com/api/v1/deposit";
     console.log("Calling MunoPay at:", munoPayUrl);
 
@@ -188,51 +221,86 @@ Deno.serve(async (req) => {
         const errorText = await munoPayResponse.text();
         console.error("MunoPay API error:", munoPayResponse.status, errorText);
         
-        // Update order to failed status
+        // Parse error message
+        let errorMessage = `MunoPay API error (${munoPayResponse.status})`;
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+            
+            // Special handling for IP whitelist error
+            if (errorMessage.includes("IP address") && errorMessage.includes("not authorized")) {
+              errorMessage += " - Please whitelist Supabase Edge Function IPs in your MunoPay dashboard";
+            }
+          }
+        } catch (e) {
+          // Not JSON, use text as is
+        }
+        
+        // Update order to failed status - PRESERVE THE REFERENCE
         await supabaseAdmin
           .from('orders')
           .update({
             payment_status: 'failed',
-            payment_gateway_response: { 
-              status: munoPayResponse.status,
-              error: errorText
+            payment_gateway_response: {
+              ...order.payment_gateway_response, // PRESERVE existing reference
+              muno_pay_error: errorText,
+              muno_pay_status: munoPayResponse.status,
+              error_occurred_at: new Date().toISOString()
             }
           })
           .eq('id', order.id);
 
-        throw new Error(`MunoPay API error (${munoPayResponse.status}): ${errorText.substring(0, 100)}`);
+        throw new Error(errorMessage);
       }
 
       const munoPayData = await munoPayResponse.json();
       console.log("MunoPay success response:", munoPayData);
 
       // ========== 4. UPDATE ORDER WITH MUNOPAY TRANSACTION ==========
+      // IMPORTANT: Preserve the original reference while adding MunoPay response
+      const updatedPaymentGatewayResponse = {
+        ...order.payment_gateway_response, // Keep the original reference
+        muno_pay_response: munoPayData,
+        transaction_id: munoPayData.transaction_id || munoPayData.payment_id || munoPayData.id,
+        muno_pay_response_received_at: new Date().toISOString()
+      };
+
       await supabaseAdmin
         .from('orders')
         .update({
           payment_status: 'pending',
           stripe_payment_intent_id: munoPayData.transaction_id || munoPayData.payment_id || munoPayData.id,
           payment_gateway: 'munopay',
-          payment_gateway_response: munoPayData,
+          payment_gateway_response: updatedPaymentGatewayResponse,
           updated_at: new Date().toISOString()
         })
         .eq('id', order.id);
 
       // ========== 5. RETURN SUCCESS ==========
+      const responseData: any = {
+        orderId: order.id,
+        amount: amount,
+        phone: formattedPhone,
+        paymentStatus: "pending",
+        note: "Please approve the payment on your phone",
+        webhookConfigured: true,
+        webhookUrl: "https://vmvvvpqwwhybqzxewksd.supabase.co/functions/v1/munopay-webhook",
+        reference: reference, // This is CRITICAL for webhook matching
+        transactionId: munoPayData.transaction_id || munoPayData.payment_id || munoPayData.id
+      };
+
+      // Add instructions if available
+      if (munoPayData.instructions) {
+        responseData.instructions = munoPayData.instructions;
+      }
+
+      console.log("Returning success response with reference:", reference);
       return new Response(
         JSON.stringify({
           success: true,
           message: "Payment initiated successfully",
-          data: {
-            orderId: order.id,
-            transactionId: munoPayData.transaction_id || munoPayData.payment_id || munoPayData.id,
-            amount: amount,
-            phone: formattedPhone,
-            instructions: munoPayData.instructions || "Check your phone for payment prompt",
-            reference: munoPayData.reference || munoPayPayload.reference,
-            paymentStatus: "pending",
-            note: "Please approve the payment on your phone"
-          }
+          data: responseData
         }),
         { headers: corsHeaders }
       );
@@ -240,13 +308,22 @@ Deno.serve(async (req) => {
     } catch (munoPayError: any) {
       console.error("MunoPay API call failed:", munoPayError);
       
-      // Update order to reflect gateway issue
+      // Check if it's an IP whitelist error
+      let userMessage = munoPayError.message;
+      if (munoPayError.message.includes("IP address") && munoPayError.message.includes("not authorized")) {
+        userMessage = "Payment gateway IP restriction. Please contact support to whitelist our server IP.";
+      }
+      
+      // Update order to reflect gateway issue - PRESERVE THE REFERENCE
       await supabaseAdmin
         .from('orders')
         .update({
-          payment_status: 'gateway_error',
-          payment_gateway_response: { 
-            error: munoPayError.message
+          payment_status: 'ip_whitelist_error',
+          payment_gateway_response: {
+            ...order.payment_gateway_response, // PRESERVE existing reference
+            error: munoPayError.message,
+            error_type: 'ip_whitelist',
+            error_occurred_at: new Date().toISOString()
           }
         })
         .eq('id', order.id);
@@ -255,13 +332,16 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Order created but payment gateway error",
+          message: "Order created but IP whitelist error",
           data: {
             orderId: order.id,
             amount: amount,
             phone: formattedPhone,
-            status: "order_created_gateway_error",
-            note: `Order saved. Payment gateway error: ${munoPayError.message}. Contact support.`
+            status: "order_created_ip_error",
+            note: `Order saved. ${userMessage} IP: 198.54.120.100 needs whitelisting in MunoPay dashboard.`,
+            webhookConfigured: true,
+            webhookUrl: "https://vmvvvpqwwhybqzxewksd.supabase.co/functions/v1/munopay-webhook",
+            reference: reference // Include reference in response
           }
         }),
         { headers: corsHeaders }
