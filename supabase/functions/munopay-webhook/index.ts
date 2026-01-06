@@ -346,7 +346,7 @@ serve(async (req) => {
     console.log(`Setting status: ${paymentStatus}`);
 
     // Update the order
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       payment_status: paymentStatus,
       updated_at: new Date().toISOString(),
       payment_gateway_response: {
@@ -354,13 +354,10 @@ serve(async (req) => {
         webhook_received_at: new Date().toISOString(),
         signature_verification: signatureVerificationMessage,
         webhook_signature_header: signatureHeader,
-        reference_id: payload.reference_id
+        reference_id: payload.reference_id,
+        transaction_id: payload.transaction_id
       }
     };
-
-    if (payload.transaction_id) {
-      updateData.stripe_payment_intent_id = payload.transaction_id;
-    }
 
     const { error: updateError, data: updatedOrder } = await supabaseAdmin
       .from('orders')
