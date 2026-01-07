@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface OptimizedImageProps {
@@ -14,6 +14,9 @@ interface OptimizedImageProps {
   onError?: () => void;
 }
 
+// Simple in-memory cache for preloaded images
+const imageCache = new Set<string>();
+
 export const OptimizedImage = ({
   src,
   alt,
@@ -26,89 +29,81 @@ export const OptimizedImage = ({
   onLoad,
   onError
 }: OptimizedImageProps) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !imageCache.has(src));
   const [hasError, setHasError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState<string>('');
+  const imgRef = useRef<HTMLImageElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // Generate optimized image URLs for different sizes
+  // Generate optimized image URLs
   const optimizedSrc = useMemo(() => {
     if (!src) return '';
-    
-    // For external URLs (like TheMealDB), we can't optimize but we can add loading params
-    if (src.startsWith('http')) {
-      return src;
-    }
-    
-    // For local images, return as-is (Vite will handle optimization)
     return src;
-  }, [src, width, height, quality]);
+  }, [src]);
 
   const handleLoad = useCallback(() => {
     setIsLoading(false);
     setHasError(false);
+    imageCache.add(src);
     onLoad?.();
-  }, [onLoad]);
+  }, [src, onLoad]);
 
   const handleError = useCallback(() => {
     setIsLoading(false);
     setHasError(true);
-    setCurrentSrc('/images/placeholder.svg');
     onError?.();
   }, [onError]);
 
-  const handleImageLoad = useCallback((img: HTMLImageElement) => {
-    if (img.complete) {
-      handleLoad();
-    } else {
-      img.addEventListener('load', handleLoad, { once: true });
-      img.addEventListener('error', handleError, { once: true });
-    }
-  }, [handleLoad, handleError]);
+  // Setup intersection observer for lazy loading
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img || priority) return;
 
-  // Intersection Observer for lazy loading
-  const imgRef = useCallback((node: HTMLImageElement | null) => {
-    if (!node) return;
-
-    if (priority) {
-      // Load immediately for priority images
-      node.src = optimizedSrc;
-      handleImageLoad(node);
+    // If already cached, load immediately
+    if (imageCache.has(src)) {
+      img.src = optimizedSrc;
+      setIsLoading(false);
       return;
     }
 
-    // Use Intersection Observer for lazy loading
-    const observer = new IntersectionObserver(
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            node.src = optimizedSrc;
-            handleImageLoad(node);
-            observer.unobserve(node);
+          if (entry.isIntersecting && img) {
+            img.src = optimizedSrc;
+            observerRef.current?.unobserve(img);
           }
         });
       },
       {
-        rootMargin: '50px' // Start loading 50px before image comes into view
+        rootMargin: '100px', // Start loading 100px before visible
+        threshold: 0.01
       }
     );
 
-    observer.observe(node);
+    observerRef.current.observe(img);
 
     return () => {
-      observer.unobserve(node);
+      observerRef.current?.disconnect();
     };
-  }, [optimizedSrc, priority, handleImageLoad]);
+  }, [src, optimizedSrc, priority]);
+
+  // Priority images load immediately
+  useEffect(() => {
+    if (priority && imgRef.current) {
+      imgRef.current.src = optimizedSrc;
+    }
+  }, [priority, optimizedSrc]);
 
   if (hasError) {
     return (
       <div 
         className={cn(
-          'flex items-center justify-center bg-muted text-muted-foreground rounded-md',
+          'flex items-center justify-center bg-muted text-muted-foreground rounded-lg',
           className
         )}
         style={{ width, height }}
       >
-        <span className="text-sm">Image unavailable</span>
+        <span className="text-xs">Image unavailable</span>
       </div>
     );
   }
@@ -118,7 +113,7 @@ export const OptimizedImage = ({
       {/* Blur placeholder */}
       {isLoading && placeholder === 'blur' && (
         <div 
-          className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted animate-pulse"
+          className="absolute inset-0 bg-gradient-to-br from-muted/60 to-muted/40 animate-pulse rounded-lg"
           aria-hidden="true"
         />
       )}
@@ -128,21 +123,22 @@ export const OptimizedImage = ({
         ref={imgRef}
         alt={alt}
         className={cn(
-          'w-full h-full object-cover transition-opacity duration-300',
+          'w-full h-full object-cover transition-opacity duration-200 rounded-lg',
           isLoading ? 'opacity-0' : 'opacity-100'
         )}
         width={width}
         height={height}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
+        fetchPriority={priority ? 'high' : 'auto'}
         onLoad={handleLoad}
         onError={handleError}
       />
 
-      {/* Loading indicator */}
+      {/* Minimal loading indicator */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
       )}
     </div>

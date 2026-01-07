@@ -230,19 +230,113 @@
 
 @media (max-width: 768px) {
     .index-hero-section {
-        padding: 4rem 1rem 6rem 1rem;
+        padding: 3rem 1rem 4rem 1rem;
+    }
+
+    .index-hero-logo-bg {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 1.5rem;
+    }
+
+    .index-hero-logo {
+        width: 65px;
+        height: 65px;
     }
 
     .index-hero-desc {
-        font-size: 1.125rem;
-        padding: 1.5rem;
+        font-size: 1rem;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .index-section {
+        padding: 3rem 1rem;
     }
 
     .index-section-title {
+        font-size: 1.75rem;
+        margin-bottom: 2rem;
+    }
+
+    .index-features-grid {
+        gap: 1rem;
+    }
+
+    .index-feature-card-content {
+        padding: 1.5rem;
+    }
+
+    .index-feature-icon {
+        width: 60px;
+        height: 60px;
         font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .index-feature-title {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .index-feature-desc {
+        font-size: 0.9rem;
+    }
+
+    .index-cta-section {
+        padding: 3rem 1rem;
     }
 
     .index-cta-title {
-        font-size: 2rem;
+        font-size: 1.75rem;
+    }
+
+    .index-cta-desc {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .index-hero-section {
+        padding: 2.5rem 0.75rem 3rem 0.75rem;
+    }
+
+    .index-hero-logo-bg {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 1rem;
+    }
+
+    .index-hero-logo {
+        width: 50px;
+        height: 50px;
+    }
+
+    .index-hero-desc {
+        font-size: 0.9rem;
+        padding: 1rem;
+        line-height: 1.6;
+    }
+
+    .index-hero-btns {
+        gap: 0.75rem;
+    }
+
+    .index-hero-btns button, 
+    .index-hero-btns a {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .index-section-title {
+        font-size: 1.5rem;
+    }
+
+    .index-cta-title {
+        font-size: 1.5rem;
+    }
+
+    .index-cta-desc {
+        font-size: 0.9rem;
     }
 }

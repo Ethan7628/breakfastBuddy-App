@@ -1,31 +1,83 @@
 .menu-root {
     max-width: 1120px;
     margin: 0 auto;
-    padding: 1.5rem;
+    padding: 1rem;
+}
+
+@media (min-width: 640px) {
+    .menu-root {
+        padding: 1.5rem;
+    }
 }
 
 .menu-title {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .menu-title {
+        margin-bottom: 2rem;
+    }
 }
 
 .menu-title h1 {
-    font-size: 2.25rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #7c4700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+@media (min-width: 640px) {
+    .menu-title h1 {
+        font-size: 2.25rem;
+        margin-bottom: 0.5rem;
+    }
 }
 
 .menu-title p {
     color: #4b5563;
+    font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+    .menu-title p {
+        font-size: 1rem;
+    }
 }
 
 .menu-category-filter {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
-    margin-bottom: 2rem;
-    justify-content: center;
+    margin-bottom: 1.5rem;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.menu-category-filter::-webkit-scrollbar {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .menu-category-filter {
+        flex-wrap: wrap;
+        justify-content: center;
+        overflow-x: visible;
+        margin-bottom: 2rem;
+    }
+}
+
+.menu-category-filter button {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 9999px;
 }
 
 .menu-cart-summary {
@@ -58,12 +110,20 @@
 .menu-items-grid {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    gap: 1.5rem;
+    gap: 1rem;
+}
+
+@media (min-width: 480px) {
+    .menu-items-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
 }
 
 @media (min-width: 768px) {
     .menu-items-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
     }
 }
 
