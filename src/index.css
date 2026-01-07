@@ -287,6 +287,115 @@
   }
 }
 
+/* Enhanced Mobile Responsiveness */
+@media (max-width: 640px) {
+  /* Global touch-friendly sizing */
+  button, [role="button"], .btn-primary, .btn-accent {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better text sizing for readability */
+  html {
+    font-size: 15px;
+  }
+
+  /* Card improvements on mobile */
+  .card, .card-elevated {
+    border-radius: 0.75rem;
+    padding: 1rem;
+  }
+
+  /* Form element touch targets */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+  }
+
+  /* Better spacing on mobile */
+  .space-comfortable > * + * {
+    margin-top: 1rem;
+  }
+
+  /* Dialog mobile improvements */
+  [role="dialog"] {
+    border-radius: 1rem !important;
+    margin: 1rem;
+  }
+}
+
+/* Improved skeleton loading animation */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton-loading {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Smooth page transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+/* Touch ripple effect for interactive elements */
+.touch-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.touch-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+.touch-ripple:active::after {
+  opacity: 1;
+}
+
+/* Better scrolling on mobile */
+@supports (-webkit-touch-callout: none) {
+  .scroll-smooth {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Image loading optimization */
+.img-loading {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.7) 50%,
+    hsl(var(--muted)) 100%
+  );
+}
+
 /* PWA Standalone Mode Styles - Makes app behave like native application */
 @media (display-mode: standalone) {
   body.pwa-standalone {
