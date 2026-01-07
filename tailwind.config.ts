@@ -18,11 +18,7 @@ export default {
 				'2xl': '1400px'
 			}
 		},
-	extend: {
-			fontFamily: {
-				sans: ['Montserrat', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-				montserrat: ['Montserrat', 'sans-serif'],
-			},
+		extend: {
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
