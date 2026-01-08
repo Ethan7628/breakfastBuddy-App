@@ -319,11 +319,10 @@
     margin-top: 1rem;
   }
 
-  /* Dialog mobile improvements */
-  [role="dialog"] {
-    border-radius: 1rem !important;
-    margin: 1rem;
-  }
+/* Dialog mobile improvements */
+[role="dialog"] {
+  border-radius: 1rem !important;
+}
 }
 
 /* Improved skeleton loading animation */
